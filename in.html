@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新智召农产品智能查询系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Microsoft YaHei', 'Arial', sans-serif; }
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%); min-height: 100vh; color: #333; line-height: 1.6; }
+        .header { background: linear-gradient(135deg, #2c6e49 0%, #1a4d33 100%); color: white; padding: 15px 20px; text-align: center; position: relative; height: 120px; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+        .header::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path fill="rgba(255,255,255,0.1)" d="M0,0 L100,0 L100,100 L0,100 Z"/></svg>'); background-size: cover; background-position: center; z-index: -1; }
+        .company-name { font-family: 'SimSun', serif; font-size: 22px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+        .company-name .english { font-family: 'Arial', sans-serif; font-size: 14px; font-weight: normal; margin-top: 2px; opacity: 0.9; }
+        .search-container { width: 100%; max-width: 800px; margin: 15px auto; position: relative; display: flex; align-items: center; }
+        .search-input { width: calc(100% - 50px); height: 42px; border: 2px solid #4a90e2; border-radius: 25px; padding: 0 20px 0 45px; background: rgba(255, 255, 255, 0.9); font-size: 16px; outline: none; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+        .search-input::placeholder { color: #999; }
+        .search-input:focus { border-color: #2a75d0; box-shadow: 0 0 0 3px rgba(42, 117, 208, 0.2); background: white; }
+        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #4a90e2; font-size: 18px; }
+        .search-btn { position: absolute; right: 65px; top: 50%; transform: translateY(-50%); color: #4a90e2; font-size: 18px; cursor: pointer; padding: 5px; border-radius: 50%; transition: all 0.2s; }
+        .search-btn:hover { background: rgba(74, 144, 226, 0.1); }
+        .language-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.2); color: white; padding: 5px 10px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: bold; transition: all 0.3s; }
+        .language-toggle:hover { background: rgba(255, 255, 255, 0.4); }
+        .main { flex: 1; padding: 15px; overflow-y: auto; }
+        .tab-container { display: flex; justify-content: space-between; margin: 15px 0; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); overflow: hidden; }
+        .tab-item { flex: 1; text-align: center; padding: 15px 0; font-size: 16px; cursor: pointer; transition: all 0.3s; border-left: 1px solid #eee; position: relative; }
+        .tab-item:first-child { border-left: none; }
+        .tab-item.active { background: linear-gradient(135deg, #4a90e2 0%, #2a75d0 100%); color: white; font-weight: bold; }
+        .tab-item.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 4px; background: white; border-radius: 2px; }
+        .tab-content { background: white; border-radius: 12px; box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08); padding: 20px; display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .content-title { font-size: 20px; color: #2c6e49; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e8f5e9; }
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
+        .feature-card { background: #f8f9fa; border-radius: 10px; padding: 15px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05); transition: all 0.3s; cursor: pointer; border: 1px solid #e0e0e0; }
+        .feature-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); border-color: #4a90e2; }
+        .feature-icon { font-size: 24px; color: #4a90e2; margin-bottom: 10px; text-align: center; }
+        .feature-title { font-weight: bold; margin-bottom: 5px; color: #2c6e49; text-align: center; }
+        .feature-desc { font-size: 14px; color: #666; text-align: center; }
+        .product-search { margin-top: 15px; position: relative; }
+        .product-search input { width: 100%; height: 40px; border: 2px solid #e0e0e0; border-radius: 20px; padding: 0 15px; font-size: 16px; transition: all 0.3s; }
+        .product-search input:focus { border-color: #4a90e2; outline: none; }
+        .result-section { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-top: 15px; border-left: 4px solid #4a90e2; }
+        .result-title { font-weight: bold; color: #2c6e49; margin-bottom: 8px; font-size: 16px; }
+        .result-content { font-size: 15px; line-height: 1.6; color: #444; }
+        .result-content ul { list-style-type: disc; padding-left: 20px; margin: 0; }
+        .result-content li { margin-bottom: 5px; }
+        .loading { display: none; text-align: center; padding: 15px; color: #4a90e2; font-weight: bold; font-size: 16px; }
+        .error-message { color: #e74c3c; font-style: italic; margin-top: 10px; }
+        .footer { border-top: 1px solid #e0e0e0; display: flex; justify-content: space-around; align-items: center; height: 60px; background-color: white; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); }
+        .footer-item { display: flex; flex-direction: column; align-items: center; color: #666; font-size: 12px; cursor: pointer; transition: color 0.3s; }
+        .footer-item.active { color: #2c6e49; font-weight: bold; }
+        .footer-item:hover { color: #4a90e2; }
+        .footer-icon { font-size: 22px; margin-bottom: 3px; }
+        .footer-item img { width: 24px; height: 24px; object-fit: contain; }
+        .hidden { display: none !important; }
+        .placeholder-text { color: #aaa; font-style: italic; }
+        /* 用户设置页面样式 */
+        .user-settings { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 25px; }
+        .avatar-container { text-align: center; margin-bottom: 25px; position: relative; }
+        .avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid #4a90e2; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3); }
+        .avatar:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(74, 144, 226, 0.4); }
+        .avatar-upload-btn { position: absolute; bottom: 0; right: 0; background: #4a90e2; color: white; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); transition: all 0.2s; }
+        .avatar-upload-btn:hover { background: #2a75d0; transform: scale(1.1); }
+        .user-form-group { margin-bottom: 20px; }
+        .user-form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #2c6e49; }
+        .user-form-control { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; transition: all 0.3s; }
+        .user-form-control:focus { outline: none; border-color: #4a90e2; box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2); }
+        .user-form-control:invalid { border-color: #e74c3c; }
+        .user-form-row { display: flex; gap: 15px; }
+        .user-form-row .user-form-control { flex: 1; }
+        .password-hint { font-size: 13px; color: #777; margin-top: 5px; display: block; }
+        .validation-hint { font-size: 12px; color: #999; margin-top: 3px; font-style: italic; }
+        .save-btn { display: block; width: 100%; background: linear-gradient(135deg, #4a90e2 0%, #2a75d0 100%); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin-top: 10px; }
+        .save-btn:hover { background: linear-gradient(135deg, #3a7bc2 0%, #1a65c0 100%); transform: translateY(-2px); box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4); }
+        .error-message { color: #e74c3c; font-style: italic; margin-top: 8px; display: none; }
+        .success-message { color: #2c6e49; font-weight: bold; margin-top: 8px; display: none; }
+        /* 子页面样式 */
+        .sub-page { display: none; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); padding: 20px; margin: 15px 0; }
+        .sub-page.active { display: block; animation: fadeIn 0.4s ease; }
+        .sub-page-title { font-size: 18px; color: #2c6e49; margin-bottom: 10px; }
+        .input-group { display: flex; align-items: center; margin-bottom: 10px; }
+        .input-group input { flex: 1; height: 40px; border: 2px solid #e0e0e0; border-radius: 20px 0 0 20px; padding: 0 15px; font-size: 16px; transition: all 0.3s; }
+        .input-group input:focus { border-color: #4a90e2; outline: none; }
+        .input-group button { height: 40px; background: linear-gradient(135deg, #4a90e2 0%, #2a75d0 100%); color: white; border: none; padding: 0 15px; border-radius: 0 20px 20px 0; cursor: pointer; transition: all 0.3s; }
+        .input-group button:hover { background: linear-gradient(135deg, #3a7bc2 0%, #1a65c0 100%); }
+        .url-output { margin-top: 5px; font-size: 14px; color: #444; }
+        .history-item { display: flex; align-items: center; margin-bottom: 5px; }
+        .history-item input { flex: 1; margin-right: 10px; padding: 5px; border: 1px solid #e0e0e0; border-radius: 5px; }
+        .history-item button { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .history-item button:hover { background: #c0392b; }
+        .demand-input { width: 100%; height: 100px; border: 2px solid #e0e0e0; border-radius: 10px; padding: 10px; font-size: 14px; }
+        .demand-list div { position: relative; padding: 10px; border-bottom: 1px solid #eee; }
+        .demand-list button { position: absolute; right: 10px; top: 10px; background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .demand-list button:hover { background: #c0392b; }
+        @media (max-width: 768px) { .feature-grid { grid-template-columns: 1fr; } .tab-container { flex-direction: column; } .tab-item { border-left: none; border-bottom: 1px solid #eee; } .user-form-row { flex-direction: column; gap: 0; } }
+        /* 新添加的底部导航栏样式，模仿图片 */
+        .app-footer { background: #1a1a1a; color: #fff; padding: 40px 20px 20px; font-size: 14px; line-height: 1.6; }
+        .app-footer .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; }
+        .app-footer .section { }
+        .app-footer .section h3 { color: #4a90e2; margin-bottom: 15px; font-size: 16px; font-weight: bold; }
+        .app-footer .section ul { list-style: none; }
+        .app-footer .section ul li { margin-bottom: 8px; }
+        .app-footer .section ul li a { color: #ccc; text-decoration: none; transition: color 0.3s; cursor: pointer; }
+        .app-footer .section ul li a:hover { color: #4a90e2; }
+        .app-footer .contact-info { display: flex; flex-direction: column; gap: 10px; }
+        .app-footer .contact-info .location { display: flex; align-items: center; gap: 10px; }
+        .app-footer .contact-info .phone { display: flex; align-items: center; gap: 10px; }
+        .app-footer .contact-info .email { display: flex; align-items: center; gap: 10px; }
+        .app-footer .social-links { display: flex; gap: 15px; margin-top: 10px; }
+        .app-footer .social-links a { color: #ccc; font-size: 20px; transition: color 0.3s; cursor: pointer; text-decoration: none; }
+        .app-footer .social-links a:hover { color: #4a90e2; }
+        .app-footer .copyright { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #333; color: #888; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name" data-lang-zh="新智召现代智能物流科技有限公司" data-lang-en="Xinzhizhao Modern Intelligent Logistics Technology Co., Ltd.">
+            新智召现代智能物流科技有限公司
+            <div class="english">Xinzhizhao Modern Intelligent Logistics Technology Co., Ltd.</div>
+        </div>
+        <div class="search-container">
+            <div class="search-icon" aria-label="搜索图标">🔍</div>
+            <input type="text" class="search-input" id="global-search" placeholder="输入蔬菜或水果名称(Input the name of a vegetable or fruit)" data-lang-zh-placeholder="输入蔬菜或水果名称(Input the name of a vegetable or fruit)" data-lang-en-placeholder="Enter vegetable or fruit name to search...">
+            <div class="search-btn" id="global-search-btn" aria-label="搜索按钮">🔍</div>
+            <div class="language-toggle" id="lang-toggle" aria-label="语言切换">EN</div>
+        </div>
+    </div>
+    <div class="main">
+        <div class="tab-container">
+            <div class="tab-item active" data-tab="product-ai" data-show-in="home" data-lang-zh="产品AI查询" data-lang-en="Product AI Query">产品AI查询</div>
+            <div class="tab-item" data-tab="logistics" data-show-in="orders" data-lang-zh="物流查询" data-lang-en="Logistics Query">物流查询</div>
+            <div class="tab-item" data-tab="farmer" data-show-in="home" data-lang-zh="农户信息查询" data-lang-en="Farmer Info Query">农户信息查询</div>
+            <div class="tab-item" data-tab="demand" data-show-in="home" data-lang-zh="需求发布" data-lang-en="Demand Release">需求发布</div>
+        </div>
+        <!-- 产品AI查询内容 -->
+        <div id="product-ai" class="tab-content active">
+            <h2 class="content-title" data-lang-zh="产品AI查询" data-lang-en="Product AI Query">产品AI查询</h2>
+            <div class="product-search">
+                <input type="text" id="product-search-input" placeholder="输入蔬菜或水果名称(Input the name of a vegetable or fruit)" data-lang-zh-placeholder="输入蔬菜或水果名称(Input the name of a vegetable or fruit)" data-lang-en-placeholder="Enter vegetable or fruit name...">
+                <div class="search-btn" id="product-search-btn" aria-label="产品搜索按钮">🔍</div>
+            </div>
+            <div class="result-section">
+                <div class="result-title" data-lang-zh="特性" data-lang-en="Characteristics">特性</div>
+                <div id="product-characteristics" class="result-content placeholder-text" data-lang-zh="请输入蔬菜或者水果" data-lang-en="Please enter a vegetable or fruit">请输入蔬菜或者水果</div>
+            </div>
+            <div class="result-section">
+                <div class="result-title" data-lang-zh="种植方法" data-lang-en="Planting Method">种植方法</div>
+                <div id="product-planting-method" class="result-content placeholder-text" data-lang-zh="请输入蔬菜或者水果" data-lang-en="Please enter a vegetable or fruit">请输入蔬菜或者水果</div>
+            </div>
+            <div class="result-section">
+                <div class="result-title" data-lang-zh="主要产地" data-lang-en="Main Origins">主要产地</div>
+                <div id="product-main-origin" class="result-content placeholder-text" data-lang-zh="请输入蔬菜或者水果" data-lang-en="Please enter a vegetable or fruit">请输入蔬菜或者水果</div>
+            </div>
+        </div>
+        <!-- 物流查询页面 -->
+        <div id="logistics" class="tab-content">
+            <h2 class="content-title" data-lang-zh="物流查询" data-lang-en="Logistics Query">物流查询</h2>
+            <div class="feature-grid">
+                <div class="feature-card" data-sub="waybill-query" tabindex="0" role="button" aria-label="运单查询">
+                    <div class="feature-icon" aria-hidden="true">📦</div>
+                    <div class="feature-title" data-lang-zh="运单查询" data-lang-en="Waybill Query">运单查询</div>
+                    <div class="feature-desc" data-lang-zh="输入运单号查询物流状态" data-lang-en="Enter waybill number to query logistics status">输入运单号查询物流状态</div>
+                </div>
+                <div class="feature-card" data-sub="realtime-track" tabindex="0" role="button" aria-label="实时追踪">
+                    <div class="feature-icon" aria-hidden="true">📍</div>
+                    <div class="feature-title" data-lang-zh="实时追踪" data-lang-en="Real-time Tracking">实时追踪</div>
+                    <div class="feature-desc" data-lang-zh="查看货物当前位置和预计到达时间" data-lang-en="View current location and estimated arrival time">查看货物当前位置和预计到达时间</div>
+                </div>
+                <div class="feature-card" data-sub="history-record" tabindex="0" role="button" aria-label="历史记录">
+                    <div class="feature-icon" aria-hidden="true">📜</div>
+                    <div class="feature-title" data-lang-zh="历史记录" data-lang-en="History Records">历史记录</div>
+                    <div class="feature-desc" data-lang-zh="查看历史物流订单和运输记录" data-lang-en="View historical logistics orders and records">查看历史物流订单和运输记录</div>
+                </div>
+            </div>
+            <div id="waybill-query-sub" class="sub-page">
+                <h3 class="sub-page-title" data-lang-zh="运单查询" data-lang-en="Waybill Query">运单查询</h3>
+                <div class="input-group">
+                    <input type="text" class="waybill-input" placeholder="输入运单号1(Input tracking number 1)" data-lang-zh-placeholder="输入运单号1(Input tracking number 1)" data-lang-en-placeholder="Enter waybill number 1" aria-label="运单号1">
+                    <button class="confirm-btn" data-lang-zh="确认" data-lang-en="Confirm" aria-label="确认运单1">确认</button>
+                </div>
+                <div class="url-output" aria-live="polite"></div>
+                <div class="input-group">
+                    <input type="text" class="waybill-input" placeholder="输入运单号2(Input tracking number 2)" data-lang-zh-placeholder="输入运单号2(Input tracking number 2)" data-lang-en-placeholder="Enter waybill number 2" aria-label="运单号2">
+                    <button class="confirm-btn" data-lang-zh="确认" data-lang-en="Confirm" aria-label="确认运单2">确认</button>
+                </div>
+                <div class="url-output" aria-live="polite"></div>
+                <div class="input-group">
+                    <input type="text" class="waybill-input" placeholder="输入运单号3(Input tracking number 3)" data-lang-zh-placeholder="输入运单号3(Input tracking number 3)" data-lang-en-placeholder="Enter waybill number 3" aria-label="运单号3">
+                    <button class="confirm-btn" data-lang-zh="确认" data-lang-en="Confirm" aria-label="确认运单3">确认</button>
+                </div>
+                <div class="url-output" aria-live="polite"></div>
+            </div>
+            <div id="realtime-track-sub" class="sub-page">
+                <h3 class="sub-page-title" data-lang-zh="实时追踪" data-lang-en="Real-time Tracking">实时追踪</h3>
+                <div class="result-content" data-lang-zh="暂未上线，敬请期待" data-lang-en="Not yet online, stay tuned">暂未上线，敬请期待</div>
+            </div>
+            <div id="history-record-sub" class="sub-page">
+                <h3 class="sub-page-title" data-lang-zh="历史记录" data-lang-en="History Records">历史记录</h3>
+                <div id="history-list" aria-live="polite"></div>
+            </div>
+        </div>
+        <!-- 农户信息查询内容 -->
+        <div id="farmer" class="tab-content">
+            <h2 class="content-title" data-lang-zh="农户信息查询" data-lang-en="Farmer Info Query">农户信息查询</h2>
+            <div class="feature-grid">
+                <div class="feature-card" data-sub="farmer-info" tabindex="0" role="button" aria-label="农户信息">
+                    <div class="feature-icon" aria-hidden="true">👨‍🌾</div>
+                    <div class="feature-title" data-lang-zh="农户信息" data-lang-en="Farmer Information">农户信息</div>
+                    <div class="feature-desc" data-lang-zh="包含基本信息、资质认证和联系方式" data-lang-en="Includes basic info, qualifications, and contact">包含基本信息、资质认证和联系方式</div>
+                </div>
+                <div class="feature-card" data-sub="planting-record" tabindex="0" role="button" aria-label="种植记录">
+                    <div class="feature-icon" aria-hidden="true">🌱</div>
+                    <div class="feature-title" data-lang-zh="种植记录" data-lang-en="Planting Records">种植记录</div>
+                    <div class="feature-desc" data-lang-zh="查看农户种植历史和产量数据" data-lang-en="View planting history and yield data">查看农户种植历史和产量数据</div>
+                </div>
+            </div>
+            <div id="farmer-info-sub" class="sub-page">
+                <h3 class="sub-page-title" data-lang-zh="农户信息" data-lang-en="Farmer Information">农户信息</h3>
+                <div id="farmer-list" role="list" aria-label="农户列表"></div>
+            </div>
+            <div id="planting-record-sub" class="sub-page">
+                <h3 class="sub-page-title" data-lang-zh="种植记录" data-lang-en="Planting Records">种植记录</h3>
+                <div class="result-content" data-lang-zh="暂未上线，敬请期待" data-lang-en="Not yet online, stay tuned">暂未上线，敬请期待</div>
+            </div>
+        </div>
+        <!-- 需求发布内容 -->
+        <div id="demand" class="tab-content">
+            <h2 class="content-title" data-lang-zh="需求发布" data-lang-en="Demand Release">需求发布</h2>
+            <div class="feature-grid">
+                <div class="feature-card" data-sub="demand-publish" tabindex="0" role="button" aria-label="农产品需求">
+                    <div class="feature-icon" aria-hidden="true">🛒</div>
+                    <div class="feature-title" data-lang-zh="农产品需求" data-lang-en="Agricultural Demand">农产品需求</div>
+                    <div class="feature-desc" data-lang-zh="发布水果/蔬菜采购需求" data-lang-en="Release fruit/vegetable purchase demands">发布水果/蔬菜采购需求</div>
+                </div>
+                <div class="feature-card" data-sub="demand-manage" tabindex="0" role="button" aria-label="需求管理">
+                    <div class="feature-icon" aria-hidden="true">📝</div>
+                    <div class="feature-title" data-lang-zh="需求管理" data-lang-en="Demand Management">需求管理</div>
+                    <div class="feature-desc" data-lang-zh="查看和管理已发布的采购需求" data-lang-en="View and manage released demands">查看和管理已发布的采购需求</div>
+                </div>
+            </div>
+            <div id="demand-publish-sub" class="sub-page">
+                <h3 class="sub-page-title" data-lang-zh="农产品需求" data-lang-en="Agricultural Demand">农产品需求</h3>
+                <textarea id="demand-input" class="demand-input" placeholder=" " data-lang-zh-placeholder=" " data-lang-en-placeholder="Enter demand content..." aria-label="需求输入"></textarea>
+                <button id="publish-btn" class="save-btn" data-lang-zh="发布" data-lang-en="Publish" aria-label="发布需求">发布</button>
+            </div>
+            <div id="demand-manage-sub" class="sub-page">
+                <h3 class="sub-page-title" data-lang-zh="需求管理" data-lang-en="Demand Management">需求管理</h3>
+                <div id="demand-list" class="demand-list" role="list" aria-label="需求列表"></div>
+            </div>
+        </div>
+        <!-- 用户设置页面（新增） -->
+        <div id="user-settings" class="tab-content">
+            <h2 class="content-title" data-lang-zh="用户设置" data-lang-en="User Settings">用户设置</h2>
+            <div class="user-settings">
+                <div class="avatar-container">
+                    <img id="user-avatar" class="avatar" src="https://ui-avatars.com/api/?name=User&background=4A90E2&color=fff" alt="用户头像" aria-label="用户头像">
+                    <div class="avatar-upload-btn" id="avatar-upload-btn" aria-label="上传头像">+</div>
+                    <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+                </div>
+                <div class="user-form-group">
+                    <label for="nickname" data-lang-zh="昵称" data-lang-en="Nickname">昵称</label>
+                    <input type="text" id="nickname" class="user-form-control" placeholder="请输入昵称" data-lang-zh-placeholder="请输入昵称" data-lang-en-placeholder="Enter nickname" aria-label="昵称">
+                </div>
+                <div class="user-form-row">
+                    <div class="user-form-group">
+                        <label for="email" data-lang-zh="邮箱" data-lang-en="Email">邮箱</label>
+                        <input type="email" id="email" class="user-form-control" placeholder="请输入邮箱" data-lang-zh-placeholder="请输入邮箱" data-lang-en-placeholder="Enter email" aria-label="邮箱">
+                        <div class="validation-hint" data-lang-zh="格式：example@domain.com" data-lang-en="Format: example@domain.com">格式：example@domain.com</div>
+                    </div>
+                    <div class="user-form-group">
+                        <label for="phone" data-lang-zh="手机号" data-lang-en="Phone">手机号</label>
+                        <input type="tel" id="phone" class="user-form-control" placeholder="请输入手机号" data-lang-zh-placeholder="请输入手机号" data-lang-en-placeholder="Enter phone number" aria-label="手机号">
+                        <div class="validation-hint" data-lang-zh="格式：13812345678" data-lang-en="Format: 13812345678">格式：13812345678</div>
+                    </div>
+                </div>
+                <div class="user-form-group">
+                    <label for="password" data-lang-zh="密码（可选，用于下次登录）" data-lang-en="Password (optional, for next login)">密码（可选，用于下次登录）</label>
+                    <input type="password" id="password" class="user-form-control" placeholder="设置登录密码" data-lang-zh-placeholder="设置登录密码" data-lang-en-placeholder="Set login password" aria-label="密码">
+                    <div class="password-hint" data-lang-zh="不设置密码可直接登录，但设置后下次登录更方便。要求：至少8位，包含英文字母和数字。" data-lang-en="No password needed for direct login, but setting one makes next login easier. Requirements: At least 8 characters, including letters and numbers.">不设置密码可直接登录，但设置后下次登录更方便。要求：至少8位，包含英文字母和数字。</div>
+                </div>
+                <div id="user-error" class="error-message"></div>
+                <div id="user-success" class="success-message" data-lang-zh="设置已保存！" data-lang-en="Settings saved!">设置已保存！</div>
+                <button id="save-settings" class="save-btn" data-lang-zh="保存设置" data-lang-en="Save Settings" aria-label="保存设置">保存设置</button>
+            </div>
+        </div>
+    </div>
+    <div class="footer" role="navigation" aria-label="底部导航">
+        <div class="footer-item active" data-page="home" tabindex="0" role="button" aria-label="首页">
+            <div class="footer-icon" aria-hidden="true">🏠</div>
+            <div data-lang-zh="首页" data-lang-en="Home">首页</div>
+        </div>
+        <div class="footer-item" data-page="orders" tabindex="0" role="button" aria-label="订单">
+            <div class="footer-icon" aria-hidden="true">📦</div>
+            <div data-lang-zh="订单" data-lang-en="Orders">订单</div>
+        </div>
+        <div class="footer-item" data-page="user" tabindex="0" role="button" aria-label="用户">
+            <div class="footer-icon" aria-hidden="true">👤</div>
+            <div data-lang-zh="用户" data-lang-en="User">用户</div>
+        </div>
+    </div>
+    <!-- 新添加的app-footer，放置在原footer下方 -->
+    <footer class="app-footer" role="contentinfo" aria-label="页脚">
+        <div class="container">
+            <div class="section">
+                <h3 data-lang-zh="新智召现代智能物流科技有限公司" data-lang-en="Xinzhizhao Modern Intelligent Logistics Technology Co., Ltd.">新智召现代智能物流科技有限公司</h3>
+                <p data-lang-zh="从农场到餐桌的精准可靠农业货物追踪。" data-lang-en="Tracking agricultural shipments from farm to table with precision and reliability.">从农场到餐桌的精准可靠农业货物追踪。</p>
+                <h3 data-lang-zh="快速链接" data-lang-en="Quick Links">快速链接</h3>
+                <div class="contact-info">
+                    <div class="item">
+                        <span aria-hidden="true">🏠</span>
+                        <span data-lang-zh="首页" data-lang-en="Home">首页</span>
+                    </div>
+                    <div class="item">
+                        <span aria-hidden="true">📦</span>
+                        <span data-lang-zh="追踪货物" data-lang-en="Track Shipment">追踪货物</span>
+                    </div>
+                    <div class="item">
+                        <span aria-hidden="true">👨‍🌾</span>
+                        <span data-lang-zh="农民目录" data-lang-en="Farmers Directory">农民目录</span>
+                    </div>
+                    <div class="item">
+                        <span aria-hidden="true">ℹ️</span>
+                        <span data-lang-zh="关于我们" data-lang-en="About Us">关于我们</span>
+                    </div>
+                    <div class="item">
+                        <span aria-hidden="true">📞</span>
+                        <span data-lang-zh="联系我们" data-lang-en="Contact">联系我们</span>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h3 data-lang-zh="支持" data-lang-en="Support">支持</h3>
+                <div class="contact-info">
+                    <div class="item">
+                        <span aria-hidden="true">❓</span>
+                        <span data-lang-zh="常见问题" data-lang-en="FAQ">常见问题</span>
+                    </div>
+                    <div class="item">
+                        <span aria-hidden="true">❔</span>
+                        <span data-lang-zh="帮助中心" data-lang-en="Help Center">帮助中心</span>
+                    </div>
+                    <div class="item">
+                        <span aria-hidden="true">🚚</span>
+                        <span data-lang-zh="运输政策" data-lang-en="Shipping Policies">运输政策</span>
+                    </div>
+                    <div class="item">
+                        <span aria-hidden="true">🔄</span>
+                        <span data-lang-zh="退货与退款" data-lang-en="Returns & Refunds">退货与退款</span>
+                    </div>
+                </div>
+            </div>
+            <div class="section">
+                <h3 data-lang-zh="联系我们" data-lang-en="Contact Us">联系我们</h3>
+                <div class="contact-info">
+                    <div class="location" data-lang-zh="位置：中国" data-lang-en="Location: China">
+                        <span aria-hidden="true">📍</span>
+                        <span>中国</span>
+                    </div>
+                    <div class="phone">
+                        <span aria-hidden="true">📞</span>
+                        <span>123456789</span>
+                    </div>
+                    <div class="email">
+                        <span aria-hidden="true">📧</span>
+                        <span>wbczxzzmoyyc@gmail.com</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="copyright" data-lang-zh="© 新智召现代智能物流科技有限公司。保留所有权利。" data-lang-en="© Xinzhizhao Modern Intelligent Logistics Technology Co., Ltd.. All rights reserved.">© <span id='current-year'></span> 新智召现代智能物流科技有限公司。保留所有权利。</div>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentLang = 'zh'; // 默认中文
+            // 更新版权年份为当前年份
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+            // 语言切换功能
+            const langToggle = document.getElementById('lang-toggle');
+            langToggle.addEventListener('click', function() {
+                currentLang = currentLang === 'zh' ? 'en' : 'zh';
+                langToggle.textContent = currentLang === 'zh' ? 'EN' : 'ZH';
+                updateLanguage();
+                // 如果在产品查询页面，重新搜索以更新输出
+                if (document.getElementById('product-ai').classList.contains('active')) {
+                    performProductSearch();
+                }
+            });
+            // 更新所有可翻译元素的函数
+            function updateLanguage() {
+                document.querySelectorAll('[data-lang-zh]').forEach(el => {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        el.placeholder = el.getAttribute(`data-lang-${currentLang}-placeholder`) || el.getAttribute(`data-lang-${currentLang}`);
+                    } else if (el.classList.contains('validation-hint') || el.classList.contains('password-hint')) {
+                        el.textContent = el.getAttribute(`data-lang-${currentLang}`);
+                    } else {
+                        el.textContent = el.getAttribute(`data-lang-${currentLang}`);
+                    }
+                });
+                // 更新占位符结果
+                resetProductResults();
+                // 更新农户卡片（如果已渲染）
+                initFarmerInfo();
+                // 更新历史记录（如果有）
+                if (document.getElementById('history-record-sub').classList.contains('active')) {
+                    renderHistory(); // 假设需要更新文本
+                }
+                // 更新app-footer
+                document.querySelectorAll('.app-footer [data-lang-zh]').forEach(el => {
+                    el.textContent = el.getAttribute(`data-lang-${currentLang}`);
+                });
+            }
+            // 返回首页函数
+            window.returnToHome = function() {
+                showTabsForPage('home');
+                activateTab('product-ai');
+                document.querySelector('.footer-item[data-page="home"]').classList.add('active');
+                document.querySelectorAll('.footer-item:not([data-page="home"])').forEach(item => item.classList.remove('active'));
+                document.querySelectorAll('.sub-page').forEach(sub => sub.classList.remove('active'));
+            };
+            // 顶部全局搜索按钮
+            const globalSearchBtn = document.getElementById('global-search-btn');
+            const globalSearchInput = document.getElementById('global-search');
+            globalSearchBtn.addEventListener('click', function() {
+                const query = globalSearchInput.value.trim();
+                if (query) {
+                    // 切换到产品AI查询
+                    document.querySelector('.tab-item[data-tab="product-ai"]').click();
+                    // 搜索产品
+                    const productInput = document.getElementById('product-search-input');
+                    productInput.value = query;
+                    // 直接调用搜索函数
+                    performProductSearch();
+                }
+            });
+            // 产品AI查询搜索按钮
+            const productSearchBtn = document.getElementById('product-search-btn');
+            const productSearchInput = document.getElementById('product-search-input');
+            productSearchBtn.addEventListener('click', function() {
+                if (productSearchInput.value.trim()) {
+                    performProductSearch();
+                }
+            });
+            // Tab切换功能
+            const tabItems = document.querySelectorAll('.tab-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // 更新激活状态
+                    tabItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    // 显示对应内容
+                    const tabId = this.getAttribute('data-tab');
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === tabId) {
+                            content.classList.add('active');
+                        }
+                    });
+                    // 隐藏所有子页面
+                    document.querySelectorAll('.sub-page').forEach(sub => sub.classList.remove('active'));
+                });
+            });
+            // 底部导航切换
+            const footerItems = document.querySelectorAll('.footer-item');
+            footerItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // 更新激活状态
+                    footerItems.forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                    // 根据点击的导航切换页面
+                    const page = this.getAttribute('data-page');
+                    if (page === 'orders') {
+                        // 点击订单导航 → 显示物流查询内容
+                        showTabsForPage('orders');
+                        activateTab('logistics');
+                    } else if (page === 'home') {
+                        // 点击首页 → 显示产品AI、农户信息、需求发布内容
+                        showTabsForPage('home');
+                        activateTab('product-ai');
+                    } else if (page === 'user') {
+                        // 点击用户 → 显示用户设置页面
+                        showTabsForPage('none');
+                        document.querySelectorAll('.tab-content').forEach(content => {
+                            content.classList.remove('active');
+                        });
+                        document.getElementById('user-settings').classList.add('active');
+                    }
+                    // 隐藏所有子页面
+                    document.querySelectorAll('.sub-page').forEach(sub => sub.classList.remove('active'));
+                });
+            });
+            // 显示指定页面的Tab
+            function showTabsForPage(page) {
+                tabItems.forEach(item => {
+                    const showIn = item.getAttribute('data-show-in');
+                    if (showIn === page || page === 'none') {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            }
+            // 激活指定Tab
+            function activateTab(tabId) {
+                // 隐藏所有内容
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                // 显示指定内容
+                const targetContent = document.getElementById(tabId);
+                if (targetContent) {
+                    targetContent.classList.add('active');
+                }
+                // 激活对应的Tab按钮
+                tabItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.getAttribute('data-tab') === tabId) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+            // 子页面点击功能（添加键盘支持）
+            const featureCards = document.querySelectorAll('.feature-card');
+            featureCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const subId = this.getAttribute('data-sub') + '-sub';
+                    document.querySelectorAll('.sub-page').forEach(sub => sub.classList.remove('active'));
+                    const subPage = document.getElementById(subId);
+                    if (subPage) {
+                        subPage.classList.add('active');
+                    }
+                });
+                card.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        card.click();
+                    }
+                });
+            });
+            // 初始化产品AI查询
+            let performProductSearch; // 声明为全局变量以便外部访问
+            function initProductSearch() {
+                const fruitsAndVegs = {
+                    "苹果": {
+                        englishName: "Apple",
+                        characteristics: { zh: "脆爽、多汁、甜或酸味。", en: "Crisp, juicy, sweet or tart flavor." },
+                        plantingMethod: { zh: "在阳光充足、排水良好的土壤中种植种子或嫁接。", en: "Plant seeds or graft in sunny, well-drained soil." },
+                        mainOrigin: { zh: "中国（陕西省）、美国、波兰。", en: "China (Shaanxi Province), USA, Poland." }
+                    },
+                    "香蕉": {
+                        englishName: "Banana",
+                        characteristics: { zh: "柔软、甜美、弯曲黄色果实。", en: "Soft, sweet, curved yellow fruit." },
+                        plantingMethod: { zh: "在热带气候中从根茎繁殖。", en: "Propagate from rhizomes in tropical climates." },
+                        mainOrigin: { zh: "印度、中国（广东省）、印尼。", en: "India, China (Guangdong Province), Indonesia." }
+                    },
+                    "橙子": {
+                        englishName: "Orange",
+                        characteristics: { zh: "多汁、柑橘味、橙色皮果实。", en: "Juicy, citrus flavor, orange-skinned fruit." },
+                        plantingMethod: { zh: "在亚热带地区从种子种植。", en: "Plant from seeds in subtropical areas." },
+                        mainOrigin: { zh: "巴西、美国、中国（湖南省）。", en: "Brazil, USA, China (Hunan Province)." }
+                    },
+                    "草莓": {
+                        englishName: "Strawberry",
+                        characteristics: { zh: "红色、多汁、甜美、外有种子。", en: "Red, juicy, sweet, with external seeds." },
+                        plantingMethod: { zh: "在肥沃、阳光充足土壤中种植匍匐茎。", en: "Plant runners in fertile, sunny soil." },
+                        mainOrigin: { zh: "美国、墨西哥、中国（山东省）。", en: "USA, Mexico, China (Shandong Province)." }
+                    },
+                    "西红柿": {
+                        englishName: "Tomato",
+                        characteristics: { zh: "多汁、红色、多用途果蔬。", en: "Juicy, red, versatile fruit-vegetable." },
+                        plantingMethod: { zh: "室内育苗后移栽到阳光充足园地。", en: "Start indoors and transplant to sunny garden." },
+                        mainOrigin: { zh: "中国（山东省）、印度、美国。", en: "China (Shandong Province), India, USA." }
+                    },
+                    "胡萝卜": {
+                        englishName: "Carrot",
+                        characteristics: { zh: "脆爽、橙色根茎蔬菜。", en: "Crisp, orange root vegetable." },
+                        plantingMethod: { zh: "直接播种在松散土壤中。", en: "Direct sow in loose soil." },
+                        mainOrigin: { zh: "中国（河南省）、美国、俄罗斯。", en: "China (Henan Province), USA, Russia." }
+                    },
+                    "西兰花": {
+                        englishName: "Broccoli",
+                        characteristics: { zh: "绿色花序、营养丰富蔬菜。", en: "Green florets, nutrient-rich vegetable." },
+                        plantingMethod: { zh: "在凉爽天气移栽幼苗。", en: "Transplant seedlings in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、印度、美国。", en: "China (Shandong Province), India, USA." }
+                    },
+                    "菠菜": {
+                        englishName: "Spinach",
+                        characteristics: { zh: "叶菜类、富含铁质蔬菜。", en: "Leafy green, iron-rich vegetable." },
+                        plantingMethod: { zh: "在凉爽、湿润土壤中播种。", en: "Sow in cool, moist soil." },
+                        mainOrigin: { zh: "中国（河北省）、美国、日本。", en: "China (Hebei Province), USA, Japan." }
+                    },
+                    "生菜": {
+                        englishName: "Lettuce",
+                        characteristics: { zh: "脆叶、沙拉基础蔬菜。", en: "Crisp leaves, salad base vegetable." },
+                        plantingMethod: { zh: "在半阴处直接播种。", en: "Direct sow in partial shade." },
+                        mainOrigin: { zh: "中国（四川省）、美国、西班牙。", en: "China (Sichuan Province), USA, Spain." }
+                    },
+                    "土豆": {
+                        englishName: "Potato",
+                        characteristics: { zh: "淀粉质块茎、多用途主食。", en: "Starchy tuber, versatile staple." },
+                        plantingMethod: { zh: "在垄沟中种植块茎。", en: "Plant tubers in furrows." },
+                        mainOrigin: { zh: "中国（内蒙古）、印度、俄罗斯。", en: "China (Inner Mongolia), India, Russia." }
+                    },
+                    "洋葱": {
+                        englishName: "Onion",
+                        characteristics: { zh: "辛辣球根、多层蔬菜。", en: "Pungent bulb, layered vegetable." },
+                        plantingMethod: { zh: "在排水良好土壤中种植鳞茎。", en: "Plant bulbs in well-drained soil." },
+                        mainOrigin: { zh: "中国（山东省）、印度、美国。", en: "China (Shandong Province), India, USA." }
+                    },
+                    "大蒜": {
+                        englishName: "Garlic",
+                        characteristics: { zh: "强烈风味、蒜瓣球根。", en: "Strong flavor, clove bulb." },
+                        plantingMethod: { zh: "秋季种植蒜瓣，春季收获。", en: "Plant cloves in fall, harvest in spring." },
+                        mainOrigin: { zh: "中国（山东省）、印度、韩国。", en: "China (Shandong Province), India, South Korea." }
+                    },
+                    "黄瓜": {
+                        englishName: "Cucumber",
+                        characteristics: { zh: "脆爽、多水绿色蔬菜。", en: "Crisp, watery green vegetable." },
+                        plantingMethod: { zh: "在温暖、阳光充足处播种。", en: "Sow in warm, sunny location." },
+                        mainOrigin: { zh: "中国（山东省）、俄罗斯、土耳其。", en: "China (Shandong Province), Russia, Turkey." }
+                    },
+                    "葡萄": {
+                        englishName: "Grape",
+                        characteristics: { zh: "甜美、多汁、簇生果实。", en: "Sweet, juicy, clustered fruit." },
+                        plantingMethod: { zh: "在排水良好土壤中扦插或嫁接。", en: "Cuttings or graft in well-drained soil." },
+                        mainOrigin: { zh: "中国（新疆）、意大利、美国。", en: "China (Xinjiang), Italy, USA." }
+                    },
+                    "梨": {
+                        englishName: "Pear",
+                        characteristics: { zh: "多汁、脆甜、梨形果实。", en: "Juicy, crisp-sweet, pear-shaped fruit." },
+                        plantingMethod: { zh: "在温和气候中种植树苗。", en: "Plant saplings in temperate climate." },
+                        mainOrigin: { zh: "中国（河北省）、美国、阿根廷。", en: "China (Hebei Province), USA, Argentina." }
+                    },
+                    "桃子": {
+                        englishName: "Peach",
+                        characteristics: { zh: "多汁、毛茸茸、甜美果实。", en: "Juicy, fuzzy, sweet fruit." },
+                        plantingMethod: { zh: "在阳光充足处种植嫁接苗。", en: "Plant grafted seedlings in sunny spot." },
+                        mainOrigin: { zh: "中国（山东省）、意大利、西班牙。", en: "China (Shandong Province), Italy, Spain." }
+                    },
+                    "蓝莓": {
+                        englishName: "Blueberry",
+                        characteristics: { zh: "蓝色、酸甜、抗氧化果实。", en: "Blue, tart-sweet, antioxidant fruit." },
+                        plantingMethod: { zh: "在酸性土壤中种植灌木。", en: "Plant bushes in acidic soil." },
+                        mainOrigin: { zh: "中国（云南省）、美国、加拿大。", en: "China (Yunnan Province), USA, Canada." }
+                    },
+                    "菠萝": {
+                        englishName: "Pineapple",
+                        characteristics: { zh: "酸甜、多汁、冠状果实。", en: "Tart-sweet, juicy, crowned fruit." },
+                        plantingMethod: { zh: "在热带从冠芽繁殖。", en: "Propagate from crown in tropics." },
+                        mainOrigin: { zh: "哥斯达黎加、菲律宾、中国（广东省）。", en: "Costa Rica, Philippines, China (Guangdong Province)." }
+                    },
+                    "芒果": {
+                        englishName: "Mango",
+                        characteristics: { zh: "甜美、多汁、热带果实。", en: "Sweet, juicy, tropical fruit." },
+                        plantingMethod: { zh: "在温暖气候中从种子或嫁接。", en: "From seeds or graft in warm climate." },
+                        mainOrigin: { zh: "印度、中国（海南省）、泰国。", en: "India, China (Hainan Province), Thailand." }
+                    },
+                    "柠檬": {
+                        englishName: "Lemon",
+                        characteristics: { zh: "酸味、黄色、柑橘果实。", en: "Sour, yellow, citrus fruit." },
+                        plantingMethod: { zh: "在亚热带从种子或扦插。", en: "From seeds or cuttings in subtropics." },
+                        mainOrigin: { zh: "印度、墨西哥、中国（四川省）。", en: "India, Mexico, China (Sichuan Province)." }
+                    },
+                    "玉米": {
+                        englishName: "Corn",
+                        characteristics: { zh: "甜美、粒状、黄色谷物蔬菜。", en: "Sweet, kernel, yellow grain vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中直接播种。", en: "Direct sow in warm soil." },
+                        mainOrigin: { zh: "美国、中国（黑龙江省）、巴西。", en: "USA, China (Heilongjiang Province), Brazil." }
+                    },
+                    "茄子": {
+                        englishName: "Eggplant",
+                        characteristics: { zh: "紫色、光滑、多用途蔬菜。", en: "Purple, smooth, versatile vegetable." },
+                        plantingMethod: { zh: "室内育苗后移栽到温暖处。", en: "Start indoors, transplant to warm area." },
+                        mainOrigin: { zh: "中国（河北省）、印度、埃及。", en: "China (Hebei Province), India, Egypt." }
+                    },
+                    "辣椒": {
+                        englishName: "Chili Pepper",
+                        characteristics: { zh: "辣味、彩色、铃铛形蔬菜。", en: "Spicy, colorful, bell-shaped vegetable." },
+                        plantingMethod: { zh: "在温暖气候中育苗移栽。", en: "Seedlings transplanted in warm climate." },
+                        mainOrigin: { zh: "中国（湖南省）、墨西哥、土耳其。", en: "China (Hunan Province), Mexico, Turkey." }
+                    },
+                    "芹菜": {
+                        englishName: "Celery",
+                        characteristics: { zh: "脆爽、茎叶、芳香蔬菜。", en: "Crisp, stalk-leaf, aromatic vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中播种幼苗。", en: "Sow seedlings in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、美国、墨西哥。", en: "China (Shandong Province), USA, Mexico." }
+                    },
+                    "菜花": {
+                        englishName: "Cauliflower",
+                        characteristics: { zh: "白色花序、营养丰富蔬菜。", en: "White florets, nutrient-rich vegetable." },
+                        plantingMethod: { zh: "在凉爽季节移栽幼苗。", en: "Transplant seedlings in cool season." },
+                        mainOrigin: { zh: "中国（山东省）、印度、美国。", en: "China (Shandong Province), India, USA." }
+                    },
+                    "芦笋": {
+                        englishName: "Asparagus",
+                        characteristics: { zh: "嫩茎、绿色、营养蔬菜。", en: "Tender spears, green, nutritious vegetable." },
+                        plantingMethod: { zh: "在排水良好土壤中种植冠芽。", en: "Plant crowns in well-drained soil." },
+                        mainOrigin: { zh: "中国（山东省）、秘鲁、墨西哥。", en: "China (Shandong Province), Peru, Mexico." }
+                    },
+                    "蘑菇": {
+                        englishName: "Mushroom",
+                        characteristics: { zh: "肉质、伞状、真菌蔬菜。", en: "Fleshy, umbrella-shaped fungus vegetable." },
+                        plantingMethod: { zh: "在黑暗、潮湿环境中培养孢子。", en: "Cultivate spores in dark, humid environment." },
+                        mainOrigin: { zh: "中国（福建省）、美国、荷兰。", en: "China (Fujian Province), USA, Netherlands." }
+                    },
+                    "韭菜": {
+                        englishName: "Chives",
+                        characteristics: { zh: "葱味、细长叶蔬菜。", en: "Onion-flavored, slender leaf vegetable." },
+                        plantingMethod: { zh: "在肥沃土壤中播种或分株。", en: "Sow or divide in fertile soil." },
+                        mainOrigin: { zh: "中国（河北省）、土耳其、埃及。", en: "China (Hebei Province), Turkey, Egypt." }
+                    },
+                    "卷心菜": {
+                        englishName: "Cabbage",
+                        characteristics: { zh: "层层叶球、脆爽蔬菜。", en: "Layered head, crisp vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中移栽幼苗。", en: "Transplant seedlings in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、印度、俄罗斯。", en: "China (Shandong Province), India, Russia." }
+                    },
+                    "甜瓜": {
+                        englishName: "Melon",
+                        characteristics: { zh: "甜美、多汁、圆形果实。", en: "Sweet, juicy, round fruit." },
+                        plantingMethod: { zh: "在温暖土壤中播种藤蔓。", en: "Sow vines in warm soil." },
+                        mainOrigin: { zh: "中国（新疆）、土耳其、伊朗。", en: "China (Xinjiang), Turkey, Iran." }
+                    },
+                    "西瓜": {
+                        englishName: "Watermelon",
+                        characteristics: { zh: "多汁、红色、巨型果实。", en: "Juicy, red, large fruit." },
+                        plantingMethod: { zh: "在热带从种子种植藤蔓。", en: "Plant vines from seeds in tropics." },
+                        mainOrigin: { zh: "中国（广西省）、土耳其、巴西。", en: "China (Guangxi Province), Turkey, Brazil." }
+                    },
+                    "樱桃": {
+                        englishName: "Cherry",
+                        characteristics: { zh: "小巧、甜酸、红色果实。", en: "Small, sweet-tart, red fruit." },
+                        plantingMethod: { zh: "在温和气候中嫁接树苗。", en: "Graft saplings in temperate climate." },
+                        mainOrigin: { zh: "土耳其、美国、中国（山东省）。", en: "Turkey, USA, China (Shandong Province)." }
+                    },
+                    "杏子": {
+                        englishName: "Apricot",
+                        characteristics: { zh: "橙色、甜美、核果果实。", en: "Orange, sweet, stone fruit." },
+                        plantingMethod: { zh: "在阳光充足处种植树苗。", en: "Plant saplings in sunny spot." },
+                        mainOrigin: { zh: "土耳其、中国（新疆）、伊朗。", en: "Turkey, China (Xinjiang), Iran." }
+                    },
+                    "李子": {
+                        englishName: "Plum",
+                        characteristics: { zh: "多汁、甜酸、紫色果实。", en: "Juicy, sweet-tart, purple fruit." },
+                        plantingMethod: { zh: "在排水良好土壤中嫁接。", en: "Graft in well-drained soil." },
+                        mainOrigin: { zh: "中国（陕西省）、塞尔维亚、罗马尼亚。", en: "China (Shaanxi Province), Serbia, Romania." }
+                    },
+                    "无花果": {
+                        englishName: "Fig",
+                        characteristics: { zh: "甜美、多籽、梨形果实。", en: "Sweet, seedy, pear-shaped fruit." },
+                        plantingMethod: { zh: "在温暖气候中扦插树苗。", en: "Cuttings of saplings in warm climate." },
+                        mainOrigin: { zh: "土耳其、埃及、中国（山东省）。", en: "Turkey, Egypt, China (Shandong Province)." }
+                    },
+                    "猕猴桃": {
+                        englishName: "Kiwi",
+                        characteristics: { zh: "绿色、多汁、毛茸茸果实。", en: "Green, juicy, fuzzy fruit." },
+                        plantingMethod: { zh: "在温和气候中种植藤蔓。", en: "Plant vines in temperate climate." },
+                        mainOrigin: { zh: "中国（陕西省）、新西兰、意大利。", en: "China (Shaanxi Province), New Zealand, Italy." }
+                    },
+                    "石榴": {
+                        englishName: "Pomegranate",
+                        characteristics: { zh: "红色、多籽、酸甜果实。", en: "Red, seedy, tart-sweet fruit." },
+                        plantingMethod: { zh: "在干燥气候中种植树苗。", en: "Plant saplings in dry climate." },
+                        mainOrigin: { zh: "伊朗、印度、中国（云南省）。", en: "Iran, India, China (Yunnan Province)." }
+                    },
+                    "椰子": {
+                        englishName: "Coconut",
+                        characteristics: { zh: "硬壳、多水、热带果实。", en: "Hard shell, watery, tropical fruit." },
+                        plantingMethod: { zh: "在热带从种子种植棕榈树。", en: "Plant palm trees from seeds in tropics." },
+                        mainOrigin: { zh: "印尼、菲律宾、中国（海南省）。", en: "Indonesia, Philippines, China (Hainan Province)." }
+                    },
+                    "木瓜": {
+                        englishName: "Papaya",
+                        characteristics: { zh: "橙色、多汁、热带果实。", en: "Orange, juicy, tropical fruit." },
+                        plantingMethod: { zh: "在温暖气候中从种子种植。", en: "Plant from seeds in warm climate." },
+                        mainOrigin: { zh: "印度、巴西、中国（广东省）。", en: "India, Brazil, China (Guangdong Province)." }
+                    },
+                    "火龙果": {
+                        englishName: "Dragon Fruit",
+                        characteristics: { zh: "红色皮、白肉、多籽果实。", en: "Red skin, white flesh, seedy fruit." },
+                        plantingMethod: { zh: "在热带扦插仙人掌藤。", en: "Cuttings of cactus vines in tropics." },
+                        mainOrigin: { zh: "越南、中国（广西省）、泰国。", en: "Vietnam, China (Guangxi Province), Thailand." }
+                    },
+                    "绿豆": {
+                        englishName: "Mung Bean",
+                        characteristics: { zh: "小绿豆、营养豆类蔬菜。", en: "Small green beans, nutritious legume." },
+                        plantingMethod: { zh: "在温暖土壤中直接播种。", en: "Direct sow in warm soil." },
+                        mainOrigin: { zh: "印度、中国（内蒙古）、缅甸。", en: "India, China (Inner Mongolia), Myanmar." }
+                    },
+                    "豌豆": {
+                        englishName: "Pea",
+                        characteristics: { zh: "绿色、甜美、荚果蔬菜。", en: "Green, sweet, pod vegetable." },
+                        plantingMethod: { zh: "在凉爽季节播种攀援植株。", en: "Sow climbing plants in cool season." },
+                        mainOrigin: { zh: "中国（四川省）、印度、美国。", en: "China (Sichuan Province), India, USA." }
+                    },
+                    "四季豆": {
+                        englishName: "Green Bean",
+                        characteristics: { zh: "绿色、脆嫩、荚果蔬菜。", en: "Green, crisp, pod vegetable." },
+                        plantingMethod: { zh: "在温暖天气中播种藤蔓。", en: "Sow vines in warm weather." },
+                        mainOrigin: { zh: "中国（云南省）、印度、土耳其。", en: "China (Yunnan Province), India, Turkey." }
+                    },
+                    "扁豆": {
+                        englishName: "Lentil",
+                        characteristics: { zh: "扁平、蛋白质丰富豆类。", en: "Flat, protein-rich legume." },
+                        plantingMethod: { zh: "在干燥气候中播种。", en: "Sow in dry climate." },
+                        mainOrigin: { zh: "印度、加拿大、中国（甘肃省）。", en: "India, Canada, China (Gansu Province)." }
+                    },
+                    "鹰嘴豆": {
+                        englishName: "Chickpea",
+                        characteristics: { zh: "圆形、坚果味豆类蔬菜。", en: "Round, nutty legume vegetable." },
+                        plantingMethod: { zh: "在温和气候中播种。", en: "Sow in temperate climate." },
+                        mainOrigin: { zh: "印度、澳大利亚、中国（新疆）。", en: "India, Australia, China (Xinjiang)." }
+                    },
+                    "红薯": {
+                        englishName: "Sweet Potato",
+                        characteristics: { zh: "甜美、橙色块茎蔬菜。", en: "Sweet, orange tuber vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中种植藤蔓。", en: "Plant vines in warm soil." },
+                        mainOrigin: { zh: "中国（山东省）、尼日利亚、坦桑尼亚。", en: "China (Shandong Province), Nigeria, Tanzania." }
+                    },
+                    "山药": {
+                        englishName: "Yam",
+                        characteristics: { zh: "长形、淀粉质块茎蔬菜。", en: "Long, starchy tuber vegetable." },
+                        plantingMethod: { zh: "在热带从块茎种植藤蔓。", en: "Plant vines from tubers in tropics." },
+                        mainOrigin: { zh: "尼日利亚、中国（河南省）、加纳。", en: "Nigeria, China (Henan Province), Ghana." }
+                    },
+                    "芋头": {
+                        englishName: "Taro",
+                        characteristics: { zh: "淀粉质、球根蔬菜。", en: "Starchy, corm vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中种植块茎。", en: "Plant corms in moist soil." },
+                        mainOrigin: { zh: "中国（广西省）、尼日利亚、加纳。", en: "China (Guangxi Province), Nigeria, Ghana." }
+                    },
+                    "姜": {
+                        englishName: "Ginger",
+                        characteristics: { zh: "辛辣、根茎调味蔬菜。", en: "Spicy, rhizome seasoning vegetable." },
+                        plantingMethod: { zh: "在温暖、潮湿环境中种植根茎。", en: "Plant rhizomes in warm, humid environment." },
+                        mainOrigin: { zh: "印度、中国（山东省）、印尼。", en: "India, China (Shandong Province), Indonesia." }
+                    },
+                    "蒜苗": {
+                        englishName: "Garlic Sprout",
+                        characteristics: { zh: "绿色、葱蒜味叶茎蔬菜。", en: "Green, onion-garlic flavored leaf-stem vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种蒜瓣。", en: "Sow cloves in cool soil." },
+                        mainOrigin: { zh: "中国（山东省）、韩国、日本。", en: "China (Shandong Province), South Korea, Japan." }
+                    },
+                    "空心菜": {
+                        englishName: "Water Spinach",
+                        characteristics: { zh: "中空茎、叶菜蔬菜。", en: "Hollow stem, leafy vegetable." },
+                        plantingMethod: { zh: "在湿润环境中播种或扦插。", en: "Sow or cuttings in moist environment." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "苋菜": {
+                        englishName: "Amaranth",
+                        characteristics: { zh: "红色或绿色叶菜蔬菜。", en: "Red or green leafy vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中直接播种。", en: "Direct sow in warm soil." },
+                        mainOrigin: { zh: "中国（江苏省）、印度、尼日利亚。", en: "China (Jiangsu Province), India, Nigeria." }
+                    },
+                    "苦瓜": {
+                        englishName: "Bitter Gourd",
+                        characteristics: { zh: "苦味、疙瘩表面蔬菜。", en: "Bitter, bumpy surface vegetable." },
+                        plantingMethod: { zh: "在热带藤蔓上种植种子。", en: "Plant seeds on tropical vines." },
+                        mainOrigin: { zh: "中国（广西省）、印度、菲律宾。", en: "China (Guangxi Province), India, Philippines." }
+                    },
+                    "丝瓜": {
+                        englishName: "Luffa",
+                        characteristics: { zh: "长形、多汁藤果蔬菜。", en: "Long, juicy vine fruit vegetable." },
+                        plantingMethod: { zh: "在温暖气候中播种藤蔓。", en: "Sow vines in warm climate." },
+                        mainOrigin: { zh: "中国（浙江省）、印度、越南。", en: "China (Zhejiang Province), India, Vietnam." }
+                    },
+                    "南瓜": {
+                        englishName: "Pumpkin",
+                        characteristics: { zh: "橙色、大型果实蔬菜。", en: "Orange, large fruit vegetable." },
+                        plantingMethod: { zh: "在阳光充足处播种藤蔓。", en: "Sow vines in sunny spot." },
+                        mainOrigin: { zh: "中国（山东省）、印度、俄罗斯。", en: "China (Shandong Province), India, Russia." }
+                    },
+                    "冬瓜": {
+                        englishName: "Winter Melon",
+                        characteristics: { zh: "白色、大型、多汁蔬菜。", en: "White, large, juicy vegetable." },
+                        plantingMethod: { zh: "在热带从种子种植藤蔓。", en: "Plant vines from seeds in tropics." },
+                        mainOrigin: { zh: "中国（广东省）、印度、泰国。", en: "China (Guangdong Province), India, Thailand." }
+                    },
+                    "莲藕": {
+                        englishName: "Lotus Root",
+                        characteristics: { zh: "多孔、脆爽根茎蔬菜。", en: "Porous, crisp rhizome vegetable." },
+                        plantingMethod: { zh: "在水中种植莲根。", en: "Plant lotus roots in water." },
+                        mainOrigin: { zh: "中国（湖北省）、印度、越南。", en: "China (Hubei Province), India, Vietnam." }
+                    },
+                    "竹笋": {
+                        englishName: "Bamboo Shoot",
+                        characteristics: { zh: "嫩脆、竹子幼芽蔬菜。", en: "Tender-crisp, bamboo sprout vegetable." },
+                        plantingMethod: { zh: "在竹林中自然生长或栽培。", en: "Natural growth or cultivate in bamboo groves." },
+                        mainOrigin: { zh: "中国（浙江省）、日本、泰国。", en: "China (Zhejiang Province), Japan, Thailand." }
+                    },
+                    "香菇": {
+                        englishName: "Shiitake Mushroom",
+                        characteristics: { zh: "伞状、肉质真菌蔬菜。", en: "Umbrella-shaped, fleshy fungus vegetable." },
+                        plantingMethod: { zh: "在木屑或稻草上培养孢子。", en: "Cultivate spores on sawdust or straw." },
+                        mainOrigin: { zh: "中国（福建省）、日本、韩国。", en: "China (Fujian Province), Japan, South Korea." }
+                    },
+                    "金针菇": {
+                        englishName: "Enoki Mushroom",
+                        characteristics: { zh: "细长、白色簇生蔬菜。", en: "Slender, white clustered vegetable." },
+                        plantingMethod: { zh: "在黑暗环境中培养。", en: "Cultivate in dark environment." },
+                        mainOrigin: { zh: "中国（河北省）、日本、韩国。", en: "China (Hebei Province), Japan, South Korea." }
+                    },
+                    "木耳": {
+                        englishName: "Wood Ear Mushroom",
+                        characteristics: { zh: "黑色、胶质真菌蔬菜。", en: "Black, gelatinous fungus vegetable." },
+                        plantingMethod: { zh: "在木头上培养孢子。", en: "Cultivate spores on wood." },
+                        mainOrigin: { zh: "中国（黑龙江省）、泰国、越南。", en: "China (Heilongjiang Province), Thailand, Vietnam." }
+                    },
+                    "银耳": {
+                        englishName: "Tremella Mushroom",
+                        characteristics: { zh: "白色、胶质真菌蔬菜。", en: "White, gelatinous fungus vegetable." },
+                        plantingMethod: { zh: "在培养基上人工栽培。", en: "Artificially cultivate on substrate." },
+                        mainOrigin: { zh: "中国（四川省）、泰国、马来西亚。", en: "China (Sichuan Province), Thailand, Malaysia." }
+                    },
+                    "豆芽": {
+                        englishName: "Bean Sprout",
+                        characteristics: { zh: "脆嫩、发芽豆类蔬菜。", en: "Crisp-tender, sprouted bean vegetable." },
+                        plantingMethod: { zh: "在水中浸泡豆子发芽。", en: "Soak beans in water to sprout." },
+                        mainOrigin: { zh: "中国（江苏省）、韩国、日本。", en: "China (Jiangsu Province), South Korea, Japan." }
+                    },
+                    "紫苏": {
+                        englishName: "Perilla",
+                        characteristics: { zh: "芳香、紫色叶蔬菜。", en: "Aromatic, purple leaf vegetable." },
+                        plantingMethod: { zh: "在阳光充足土壤中播种。", en: "Sow in sunny soil." },
+                        mainOrigin: { zh: "日本、中国（山东省）、韩国。", en: "Japan, China (Shandong Province), South Korea." }
+                    },
+                    "薄荷": {
+                        englishName: "Mint",
+                        characteristics: { zh: "清凉、芳香叶蔬菜。", en: "Cooling, aromatic leaf vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中扦插。", en: "Cuttings in moist soil." },
+                        mainOrigin: { zh: "美国、印度、中国（安徽省）。", en: "USA, India, China (Anhui Province)." }
+                    },
+                    "罗勒": {
+                        englishName: "Basil",
+                        characteristics: { zh: "香甜、绿色叶调味蔬菜。", en: "Sweet, green leaf seasoning vegetable." },
+                        plantingMethod: { zh: "在温暖气候中播种。", en: "Sow in warm climate." },
+                        mainOrigin: { zh: "印度、泰国、中国（云南省）。", en: "India, Thailand, China (Yunnan Province)." }
+                    },
+                    "欧芹": {
+                        englishName: "Parsley",
+                        characteristics: { zh: "卷曲叶、芳香蔬菜。", en: "Curly leaf, aromatic vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "土耳其、埃及、中国（山东省）。", en: "Turkey, Egypt, China (Shandong Province)." }
+                    },
+                    "香菜": {
+                        englishName: "Coriander",
+                        characteristics: { zh: "强烈风味、叶茎蔬菜。", en: "Strong flavor, leaf-stem vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中播种。", en: "Sow in cool weather." },
+                        mainOrigin: { zh: "墨西哥、中国（河北省）、印度。", en: "Mexico, China (Hebei Province), India." }
+                    },
+                    "茴香": {
+                        englishName: "Fennel",
+                        characteristics: { zh: "甜香、球茎叶蔬菜。", en: "Sweet aromatic, bulb-leaf vegetable." },
+                        plantingMethod: { zh: "在温和气候中播种。", en: "Sow in temperate climate." },
+                        mainOrigin: { zh: "印度、中国（浙江省）、埃及。", en: "India, China (Zhejiang Province), Egypt." }
+                    },
+                    "莴笋": {
+                        englishName: "Celery Lettuce",
+                        characteristics: { zh: "脆爽、茎叶蔬菜。", en: "Crisp, stem-leaf vegetable." },
+                        plantingMethod: { zh: "在凉爽季节移栽幼苗。", en: "Transplant seedlings in cool season." },
+                        mainOrigin: { zh: "中国（四川省）、美国、西班牙。", en: "China (Sichuan Province), USA, Spain." }
+                    },
+                    "球茎甘蓝": {
+                        englishName: "Kohlrabi",
+                        characteristics: { zh: "球形茎、脆爽蔬菜。", en: "Bulbous stem, crisp vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中播种。", en: "Sow in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、德国、荷兰。", en: "China (Shandong Province), Germany, Netherlands." }
+                    },
+                    "甜菜": {
+                        englishName: "Beet",
+                        characteristics: { zh: "红色根茎、甜美蔬菜。", en: "Red root, sweet vegetable." },
+                        plantingMethod: { zh: "直接播种在松散土壤中。", en: "Direct sow in loose soil." },
+                        mainOrigin: { zh: "俄罗斯、法国、中国（内蒙古）。", en: "Russia, France, China (Inner Mongolia)." }
+                    },
+                    "芜菁": {
+                        englishName: "Turnip",
+                        characteristics: { zh: "白色根茎、叶菜蔬菜。", en: "White root, leafy vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（河北省）、俄罗斯、加拿大。", en: "China (Hebei Province), Russia, Canada." }
+                    },
+                    "萝卜": {
+                        englishName: "Radish",
+                        characteristics: { zh: "脆辣、白或红根茎蔬菜。", en: "Crisp-spicy, white or red root vegetable." },
+                        plantingMethod: { zh: "直接播种在肥沃土壤中。", en: "Direct sow in fertile soil." },
+                        mainOrigin: { zh: "中国（山东省）、日本、韩国。", en: "China (Shandong Province), Japan, South Korea." }
+                    },
+                    "大头菜": {
+                        englishName: "Daikon",
+                        characteristics: { zh: "大型、白根茎蔬菜。", en: "Large, white root vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中播种。", en: "Sow in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、日本、韩国。", en: "China (Shandong Province), Japan, South Korea." }
+                    },
+                    "秋葵": {
+                        englishName: "Okra",
+                        characteristics: { zh: "粘液质、绿色荚果蔬菜。", en: "Mucilaginous, green pod vegetable." },
+                        plantingMethod: { zh: "在温暖气候中播种。", en: "Sow in warm climate." },
+                        mainOrigin: { zh: "印度、中国（广东省）、尼日利亚。", en: "India, China (Guangdong Province), Nigeria." }
+                    },
+                    "豇豆": {
+                        englishName: "Yardlong Bean",
+                        characteristics: { zh: "长荚、绿色豆类蔬菜。", en: "Long pod, green legume vegetable." },
+                        plantingMethod: { zh: "在热带藤蔓上种植。", en: "Plant on tropical vines." },
+                        mainOrigin: { zh: "中国（广西省）、印度、泰国。", en: "China (Guangxi Province), India, Thailand." }
+                    },
+                    "蚕豆": {
+                        englishName: "Broad Bean",
+                        characteristics: { zh: "大粒、绿色荚果蔬菜。", en: "Large grain, green pod vegetable." },
+                        plantingMethod: { zh: "在凉爽季节播种。", en: "Sow in cool season." },
+                        mainOrigin: { zh: "中国（四川省）、埃及、意大利。", en: "China (Sichuan Province), Egypt, Italy." }
+                    },
+                    "毛豆": {
+                        englishName: "Edamame",
+                        characteristics: { zh: "绿色、毛茸荚果蔬菜。", en: "Green, fuzzy pod vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中播种大豆。", en: "Sow soybeans in warm soil." },
+                        mainOrigin: { zh: "中国（黑龙江省）、日本、美国。", en: "China (Heilongjiang Province), Japan, USA." }
+                    },
+                    "刀豆": {
+                        englishName: "Jack Bean",
+                        characteristics: { zh: "宽荚、扁平豆类蔬菜。", en: "Wide pod, flat legume vegetable." },
+                        plantingMethod: { zh: "在温暖气候中藤蔓种植。", en: "Vine plant in warm climate." },
+                        mainOrigin: { zh: "印度、中国（云南省）、巴西。", en: "India, China (Yunnan Province), Brazil." }
+                    },
+                    "橄榄": {
+                        englishName: "Olive",
+                        characteristics: { zh: "绿色或黑、油质果实。", en: "Green or black, oily fruit." },
+                        plantingMethod: { zh: "在地中海气候中种植树苗。", en: "Plant saplings in Mediterranean climate." },
+                        mainOrigin: { zh: "西班牙、意大利、中国（甘肃省）。", en: "Spain, Italy, China (Gansu Province)." }
+                    },
+                    "鳄梨": {
+                        englishName: "Avocado",
+                        characteristics: { zh: "奶油质、绿色果实。", en: "Creamy, green fruit." },
+                        plantingMethod: { zh: "在热带从种子或嫁接。", en: "From seeds or graft in tropics." },
+                        mainOrigin: { zh: "墨西哥、多米尼加、中国（云南省）。", en: "Mexico, Dominican Republic, China (Yunnan Province)." }
+                    },
+                    "哈密瓜": {
+                        englishName: "Cantaloupe",
+                        characteristics: { zh: "橙色肉、网纹皮果实。", en: "Orange flesh, netted skin fruit." },
+                        plantingMethod: { zh: "在温暖土壤中播种藤蔓。", en: "Sow vines in warm soil." },
+                        mainOrigin: { zh: "中国（新疆）、土耳其、美国。", en: "China (Xinjiang), Turkey, USA." }
+                    },
+                    "桑葚": {
+                        englishName: "Mulberry",
+                        characteristics: { zh: "紫黑、甜酸、簇生果实。", en: "Purple-black, sweet-tart, clustered fruit." },
+                        plantingMethod: { zh: "在温和气候中种植树苗。", en: "Plant saplings in temperate climate." },
+                        mainOrigin: { zh: "中国（江苏省）、土耳其、伊朗。", en: "China (Jiangsu Province), Turkey, Iran." }
+                    },
+                    "覆盆子": {
+                        englishName: "Raspberry",
+                        characteristics: { zh: "红色、多粒、甜酸果实。", en: "Red, aggregate, sweet-tart fruit." },
+                        plantingMethod: { zh: "在凉爽气候中种植灌木。", en: "Plant bushes in cool climate." },
+                        mainOrigin: { zh: "俄罗斯、墨西哥、中国（辽宁省）。", en: "Russia, Mexico, China (Liaoning Province)." }
+                    },
+                    "黑莓": {
+                        englishName: "Blackberry",
+                        characteristics: { zh: "黑色、多粒、甜酸果实。", en: "Black, aggregate, sweet-tart fruit." },
+                        plantingMethod: { zh: "在温和土壤中种植藤蔓。", en: "Plant vines in temperate soil." },
+                        mainOrigin: { zh: "美国、墨西哥、中国（云南省）。", en: "USA, Mexico, China (Yunnan Province)." }
+                    },
+                    "蔓越莓": {
+                        englishName: "Cranberry",
+                        characteristics: { zh: "红色、酸味、小果实。", en: "Red, sour, small fruit." },
+                        plantingMethod: { zh: "在酸性沼泽中种植藤蔓。", en: "Plant vines in acidic bogs." },
+                        mainOrigin: { zh: "美国、加拿大、中国（黑龙江省）。", en: "USA, Canada, China (Heilongjiang Province)." }
+                    },
+                    "荔枝": {
+                        englishName: "Lychee",
+                        characteristics: { zh: "红色皮、白肉、甜美果实。", en: "Red skin, white flesh, sweet fruit." },
+                        plantingMethod: { zh: "在亚热带从种子或嫁接。", en: "From seeds or graft in subtropics." },
+                        mainOrigin: { zh: "中国（广东省）、印度、泰国。", en: "China (Guangdong Province), India, Thailand." }
+                    },
+                    "龙眼": {
+                        englishName: "Longan",
+                        characteristics: { zh: "褐色皮、白肉、甜美果实。", en: "Brown skin, white flesh, sweet fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "榴莲": {
+                        englishName: "Durian",
+                        characteristics: { zh: "刺皮、强烈风味果实。", en: "Spiky skin, strong-flavored fruit." },
+                        plantingMethod: { zh: "在热带从种子种植树。", en: "Plant trees from seeds in tropics." },
+                        mainOrigin: { zh: "泰国、马来西亚、中国（海南省）。", en: "Thailand, Malaysia, China (Hainan Province)." }
+                    },
+                    "山竹": {
+                        englishName: "Mangosteen",
+                        characteristics: { zh: "紫皮、白肉、甜酸果实。", en: "Purple skin, white flesh, sweet-tart fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "泰国、马来西亚、中国（云南省）。", en: "Thailand, Malaysia, China (Yunnan Province)." }
+                    },
+                    "杨梅": {
+                        englishName: "Bayberry",
+                        characteristics: { zh: "红色、酸甜、多汁果实。", en: "Red, sour-sweet, juicy fruit." },
+                        plantingMethod: { zh: "在温和气候中种植树苗。", en: "Plant saplings in temperate climate." },
+                        mainOrigin: { zh: "中国（浙江省）、日本、韩国。", en: "China (Zhejiang Province), Japan, South Korea." }
+                    },
+                    "柿子": {
+                        englishName: "Persimmon",
+                        characteristics: { zh: "橙色、甜美、涩味果实。", en: "Orange, sweet, astringent fruit." },
+                        plantingMethod: { zh: "在温和土壤中种植树苗。", en: "Plant saplings in temperate soil." },
+                        mainOrigin: { zh: "中国（陕西省）、日本、韩国。", en: "China (Shaanxi Province), Japan, South Korea." }
+                    },
+                    "枣子": {
+                        englishName: "Jujube",
+                        characteristics: { zh: "红色、甜脆、核果果实。", en: "Red, sweet-crisp, stone fruit." },
+                        plantingMethod: { zh: "在干燥气候中嫁接树苗。", en: "Graft saplings in dry climate." },
+                        mainOrigin: { zh: "中国（新疆）、韩国、伊朗。", en: "China (Xinjiang), South Korea, Iran." }
+                    },
+                    "栗子": {
+                        englishName: "Chestnut",
+                        characteristics: { zh: "褐色壳、甜美坚果蔬菜。", en: "Brown shell, sweet nut vegetable." },
+                        plantingMethod: { zh: "在温和气候中种植树苗。", en: "Plant saplings in temperate climate." },
+                        mainOrigin: { zh: "中国（安徽省）、韩国、意大利。", en: "China (Anhui Province), South Korea, Italy." }
+                    },
+                    "腰果": {
+                        englishName: "Cashew",
+                        characteristics: { zh: "肾形、坚果果实。", en: "Kidney-shaped, nut fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "越南、印度、中国（海南省）。", en: "Vietnam, India, China (Hainan Province)." }
+                    },
+                    "杏仁": {
+                        englishName: "Almond",
+                        characteristics: { zh: "硬壳、内仁坚果。", en: "Hard shell, inner kernel nut." },
+                        plantingMethod: { zh: "在地中海气候中种植树。", en: "Plant trees in Mediterranean climate." },
+                        mainOrigin: { zh: "美国、澳大利亚、中国（新疆）。", en: "USA, Australia, China (Xinjiang)." }
+                    },
+                    "核桃": {
+                        englishName: "Walnut",
+                        characteristics: { zh: "皱纹壳、脑形仁果实。", en: "Wrinkled shell, brain-shaped kernel fruit." },
+                        plantingMethod: { zh: "在温和气候中种植树苗。", en: "Plant saplings in temperate climate." },
+                        mainOrigin: { zh: "中国（陕西省）、美国、伊朗。", en: "China (Shaanxi Province), USA, Iran." }
+                    },
+                    "开心果": {
+                        englishName: "Pistachio",
+                        characteristics: { zh: "绿色仁、裂壳坚果。", en: "Green kernel, split shell nut." },
+                        plantingMethod: { zh: "在干燥气候中种植树。", en: "Plant trees in dry climate." },
+                        mainOrigin: { zh: "伊朗、美国、中国（新疆）。", en: "Iran, USA, China (Xinjiang)." }
+                    },
+                    "松子": {
+                        englishName: "Pine Nut",
+                        characteristics: { zh: "小粒、油质松树种子。", en: "Small, oily pine tree seeds." },
+                        plantingMethod: { zh: "在寒冷气候中自然采集。", en: "Naturally harvest in cold climate." },
+                        mainOrigin: { zh: "中国（黑龙江省）、俄罗斯、巴基斯坦。", en: "China (Heilongjiang Province), Russia, Pakistan." }
+                    },
+                    "莲子": {
+                        englishName: "Lotus Seed",
+                        characteristics: { zh: "白色、脆甜莲花种子。", en: "White, crisp-sweet lotus flower seeds." },
+                        plantingMethod: { zh: "在水中种植莲花。", en: "Plant lotus flowers in water." },
+                        mainOrigin: { zh: "中国（湖南省）、印度、越南。", en: "China (Hunan Province), India, Vietnam." }
+                    },
+                    "花生": {
+                        englishName: "Peanut",
+                        characteristics: { zh: "地下荚、油质豆类。", en: "Underground pod, oily legume." },
+                        plantingMethod: { zh: "在温暖土壤中播种。", en: "Sow in warm soil." },
+                        mainOrigin: { zh: "中国（山东省）、印度、尼日利亚。", en: "China (Shandong Province), India, Nigeria." }
+                    },
+                    "芝麻": {
+                        englishName: "Sesame",
+                        characteristics: { zh: "小粒、油质种子蔬菜。", en: "Small, oily seed vegetable." },
+                        plantingMethod: { zh: "在热带播种一年生植物。", en: "Sow annual plants in tropics." },
+                        mainOrigin: { zh: "印度、中国（河南省）、缅甸。", en: "India, China (Henan Province), Myanmar." }
+                    },
+                    "葵花籽": {
+                        englishName: "Sunflower Seed",
+                        characteristics: { zh: "黑白壳、油质种子。", en: "Black-white shell, oily seeds." },
+                        plantingMethod: { zh: "在阳光充足处播种向日葵。", en: "Sow sunflowers in sunny spot." },
+                        mainOrigin: { zh: "俄罗斯、乌克兰、中国（内蒙古）。", en: "Russia, Ukraine, China (Inner Mongolia)." }
+                    },
+                    "薏米": {
+                        englishName: "Job's Tears",
+                        characteristics: { zh: "白色粒、谷物类蔬菜。", en: "White grains, cereal vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中播种。", en: "Sow in moist soil." },
+                        mainOrigin: { zh: "中国（贵州省）、泰国、越南。", en: "China (Guizhou Province), Thailand, Vietnam." }
+                    },
+                    "荞麦": {
+                        englishName: "Buckwheat",
+                        characteristics: { zh: "三角粒、谷物蔬菜。", en: "Triangular grains, cereal vegetable." },
+                        plantingMethod: { zh: "在凉爽气候中播种。", en: "Sow in cool climate." },
+                        mainOrigin: { zh: "中国（山西省）、俄罗斯、乌克兰。", en: "China (Shanxi Province), Russia, Ukraine." }
+                    },
+                    "燕麦": {
+                        englishName: "Oat",
+                        characteristics: { zh: "扁平粒、纤维丰富谷物。", en: "Flat grains, fiber-rich cereal." },
+                        plantingMethod: { zh: "在温和土壤中播种。", en: "Sow in temperate soil." },
+                        mainOrigin: { zh: "俄罗斯、芬兰、中国（内蒙古）。", en: "Russia, Finland, China (Inner Mongolia)." }
+                    },
+                    "小米": {
+                        englishName: "Millet",
+                        characteristics: { zh: "小黄粒、耐旱谷物。", en: "Small yellow grains, drought-resistant cereal." },
+                        plantingMethod: { zh: "在干燥地区播种。", en: "Sow in dry areas." },
+                        mainOrigin: { zh: "印度、中国（陕西省）、尼日尔。", en: "India, China (Shaanxi Province), Niger." }
+                    },
+                    "高粱": {
+                        englishName: "Sorghum",
+                        characteristics: { zh: "红色粒、耐旱谷物蔬菜。", en: "Red grains, drought-resistant cereal vegetable." },
+                        plantingMethod: { zh: "在温暖干燥土壤中播种。", en: "Sow in warm, dry soil." },
+                        mainOrigin: { zh: "美国、中国（辽宁省）、印度。", en: "USA, China (Liaoning Province), India." }
+                    },
+                    "苜蓿": {
+                        englishName: "Alfalfa",
+                        characteristics: { zh: "绿色叶、饲料类蔬菜。", en: "Green leaves, forage vegetable." },
+                        plantingMethod: { zh: "在肥沃土壤中播种多年生植物。", en: "Sow perennial plants in fertile soil." },
+                        mainOrigin: { zh: "美国、中国（甘肃省）、加拿大。", en: "USA, China (Gansu Province), Canada." }
+                    },
+                    "苕子": {
+                        englishName: "Vetch",
+                        characteristics: { zh: "紫花、豆科蔬菜。", en: "Purple flowers, legume vegetable." },
+                        plantingMethod: { zh: "在凉爽气候中播种藤蔓。", en: "Sow vines in cool climate." },
+                        mainOrigin: { zh: "中国（四川省）、印度、埃塞俄比亚。", en: "China (Sichuan Province), India, Ethiopia." }
+                    },
+                    "芥菜": {
+                        englishName: "Mustard Greens",
+                        characteristics: { zh: "辛辣叶、绿色蔬菜。", en: "Pungent leaves, green vegetable." },
+                        plantingMethod: { zh: "在凉爽季节直接播种。", en: "Direct sow in cool season." },
+                        mainOrigin: { zh: "中国（广东省）、印度、日本。", en: "China (Guangdong Province), India, Japan." }
+                    },
+                    "油菜": {
+                        englishName: "Rapeseed",
+                        characteristics: { zh: "黄色花、油籽蔬菜。", en: "Yellow flowers, oilseed vegetable." },
+                        plantingMethod: { zh: "在温和土壤中播种。", en: "Sow in temperate soil." },
+                        mainOrigin: { zh: "中国（四川省）、加拿大、印度。", en: "China (Sichuan Province), Canada, India." }
+                    },
+                    "紫甘蓝": {
+                        englishName: "Red Cabbage",
+                        characteristics: { zh: "紫色叶球、抗氧化蔬菜。", en: "Purple head, antioxidant vegetable." },
+                        plantingMethod: { zh: "在凉爽天气移栽幼苗。", en: "Transplant seedlings in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、印度、俄罗斯。", en: "China (Shandong Province), India, Russia." }
+                    },
+                    "球葱": {
+                        englishName: "Shallot",
+                        characteristics: { zh: "球形、温和味蔬菜。", en: "Bulbous, mild-flavored vegetable." },
+                        plantingMethod: { zh: "在排水土壤中种植鳞茎。", en: "Plant bulbs in drained soil." },
+                        mainOrigin: { zh: "中国（河北省）、法国、意大利。", en: "China (Hebei Province), France, Italy." }
+                    },
+                    "甜椒": {
+                        englishName: "Bell Pepper",
+                        characteristics: { zh: "甜味、彩色铃铛蔬菜。", en: "Sweet, colorful bell vegetable." },
+                        plantingMethod: { zh: "在温暖处育苗移栽。", en: "Seedlings transplanted in warm spot." },
+                        mainOrigin: { zh: "中国（山东省）、墨西哥、西班牙。", en: "China (Shandong Province), Mexico, Spain." }
+                    },
+                    "茼蒿": {
+                        englishName: "Garland Chrysanthemum",
+                        characteristics: { zh: "芳香叶、绿色蔬菜。", en: "Aromatic leaves, green vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（江苏省）、日本、韩国。", en: "China (Jiangsu Province), Japan, South Korea." }
+                    },
+                    "马齿苋": {
+                        englishName: "Purslane",
+                        characteristics: { zh: "多汁叶、Omega-3丰富蔬菜。", en: "Juicy leaves, Omega-3 rich vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中直接播种。", en: "Direct sow in warm soil." },
+                        mainOrigin: { zh: "中国（河南省）、印度、希腊。", en: "China (Henan Province), India, Greece." }
+                    },
+                    "蒲公英": {
+                        englishName: "Dandelion",
+                        characteristics: { zh: "苦味叶、野生蔬菜。", en: "Bitter leaves, wild vegetable." },
+                        plantingMethod: { zh: "在阳光处自然生长或播种。", en: "Natural growth or sow in sunny spot." },
+                        mainOrigin: { zh: "中国（河北省）、美国、法国。", en: "China (Hebei Province), USA, France." }
+                    },
+                    "菊花菜": {
+                        englishName: "Chrysanthemum Greens",
+                        characteristics: { zh: "嫩叶、花状蔬菜。", en: "Tender leaves, flower-like vegetable." },
+                        plantingMethod: { zh: "在湿润环境中播种。", en: "Sow in moist environment." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "藜麦": {
+                        englishName: "Quinoa",
+                        characteristics: { zh: "粒状、蛋白质丰富伪谷物。", en: "Grain-like, protein-rich pseudocereal." },
+                        plantingMethod: { zh: "在高海拔干燥处播种。", en: "Sow in high-altitude dry areas." },
+                        mainOrigin: { zh: "秘鲁、玻利维亚、中国（青海省）。", en: "Peru, Bolivia, China (Qinghai Province)." }
+                    },
+                    "芥蓝": {
+                        englishName: "Chinese Broccoli",
+                        characteristics: { zh: "厚茎、绿色叶蔬菜。", en: "Thick stem, green leaf vegetable." },
+                        plantingMethod: { zh: "在温暖气候中播种。", en: "Sow in warm climate." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、马来西亚。", en: "China (Guangdong Province), Thailand, Malaysia." }
+                    },
+                    "通菜": {
+                        englishName: "Water Spinach",
+                        characteristics: { zh: "中空茎、水生蔬菜。", en: "Hollow stem, aquatic vegetable." },
+                        plantingMethod: { zh: "在水中扦插茎秆。", en: "Cuttings of stems in water." },
+                        mainOrigin: { zh: "中国（广西省）、越南、泰国。", en: "China (Guangxi Province), Vietnam, Thailand." }
+                    },
+                    "荠菜": {
+                        englishName: "Shepherd's Purse",
+                        characteristics: { zh: "小叶、野生春菜。", en: "Small leaves, wild spring vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（江苏省）、韩国、日本。", en: "China (Jiangsu Province), South Korea, Japan." }
+                    },
+                    "灰菜": {
+                        englishName: "Goosefoot",
+                        characteristics: { zh: "灰绿叶、耐盐蔬菜。", en: "Gray-green leaves, salt-tolerant vegetable." },
+                        plantingMethod: { zh: "在贫瘠土壤中播种。", en: "Sow in poor soil." },
+                        mainOrigin: { zh: "中国（内蒙古）、俄罗斯、哈萨克斯坦。", en: "China (Inner Mongolia), Russia, Kazakhstan." }
+                    },
+                    "蕨菜": {
+                        englishName: "Fiddlehead Fern",
+                        characteristics: { zh: "卷曲嫩芽、野生蔬菜。", en: "Curled tender fronds, wild vegetable." },
+                        plantingMethod: { zh: "在潮湿林中自然采集。", en: "Naturally harvest in moist forests." },
+                        mainOrigin: { zh: "中国（东北省）、日本、韩国。", en: "China (Northeast Provinces), Japan, South Korea." }
+                    },
+                    "鱼腥草": {
+                        englishName: "Houttuynia",
+                        characteristics: { zh: "鱼腥味叶、药用蔬菜。", en: "Fishy-smelling leaves, medicinal vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中扦插。", en: "Cuttings in moist soil." },
+                        mainOrigin: { zh: "中国（四川省）、越南、泰国。", en: "China (Sichuan Province), Vietnam, Thailand." }
+                    },
+                    "折耳根": {
+                        englishName: "Fish Mint",
+                        characteristics: { zh: "根茎、特殊风味蔬菜。", en: "Rhizome, unique flavored vegetable." },
+                        plantingMethod: { zh: "在凉爽处种植根茎。", en: "Plant rhizomes in cool spot." },
+                        mainOrigin: { zh: "中国（贵州省）、越南、缅甸。", en: "China (Guizhou Province), Vietnam, Myanmar." }
+                    },
+                    "豆角": {
+                        englishName: "String Bean",
+                        characteristics: { zh: "长荚、绿色蔬菜。", en: "Long pod, green vegetable." },
+                        plantingMethod: { zh: "在温暖藤蔓上播种。", en: "Sow on warm vines." },
+                        mainOrigin: { zh: "中国（云南省）、印度、泰国。", en: "China (Yunnan Province), India, Thailand." }
+                    },
+                    "荷兰豆": {
+                        englishName: "Snow Pea",
+                        characteristics: { zh: "扁荚、甜脆蔬菜。", en: "Flat pod, sweet-crisp vegetable." },
+                        plantingMethod: { zh: "在凉爽季节播种攀援。", en: "Sow climbing in cool season." },
+                        mainOrigin: { zh: "中国（浙江省）、肯尼亚、危地马拉。", en: "China (Zhejiang Province), Kenya, Guatemala." }
+                    },
+                    "甜玉米": {
+                        englishName: "Sweet Corn",
+                        characteristics: { zh: "甜粒、黄色蔬菜。", en: "Sweet kernels, yellow vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中播种。", en: "Sow in warm soil." },
+                        mainOrigin: { zh: "美国、中国（吉林省）、巴西。", en: "USA, China (Jilin Province), Brazil." }
+                    },
+                    "糯玉米": {
+                        englishName: "Waxy Corn",
+                        characteristics: { zh: "粘性粒、白色蔬菜。", en: "Sticky kernels, white vegetable." },
+                        plantingMethod: { zh: "在热带播种特殊品种。", en: "Sow special variety in tropics." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "笋瓜": {
+                        englishName: "Chayote",
+                        characteristics: { zh: "绿色、细长藤果蔬菜。", en: "Green, slender vine fruit vegetable." },
+                        plantingMethod: { zh: "在阳光处播种藤蔓。", en: "Sow vines in sunny spot." },
+                        mainOrigin: { zh: "中国（山东省）、印度、土耳其。", en: "China (Shandong Province), India, Turkey." }
+                    },
+                    "节瓜": {
+                        englishName: "Fuzzy Melon",
+                        characteristics: { zh: "短胖、嫩瓜蔬菜。", en: "Short-fat, tender melon vegetable." },
+                        plantingMethod: { zh: "在温暖气候中种植藤蔓。", en: "Plant vines in warm climate." },
+                        mainOrigin: { zh: "中国（广东省）、越南、菲律宾。", en: "China (Guangdong Province), Vietnam, Philippines." }
+                    },
+                    "瓠瓜": {
+                        englishName: "Bottle Gourd",
+                        characteristics: { zh: "长形、白皮蔬菜。", en: "Long, white-skinned vegetable." },
+                        plantingMethod: { zh: "在热带从种子藤蔓。", en: "From seeds on vines in tropics." },
+                        mainOrigin: { zh: "中国（浙江省）、印度、泰国。", en: "China (Zhejiang Province), India, Thailand." }
+                    },
+                    "佛手瓜": {
+                        englishName: "Chayote",
+                        characteristics: { zh: "梨形、皱纹蔬菜。", en: "Pear-shaped, wrinkled vegetable." },
+                        plantingMethod: { zh: "在温和处种植藤蔓。", en: "Plant vines in temperate spot." },
+                        mainOrigin: { zh: "墨西哥、中国（云南省）、巴西。", en: "Mexico, China (Yunnan Province), Brazil." }
+                    },
+                    "刺瓜": {
+                        englishName: "Horned Melon",
+                        characteristics: { zh: "刺皮、绿色蔬菜。", en: "Spiky skin, green vegetable." },
+                        plantingMethod: { zh: "在热带播种藤蔓。", en: "Sow vines in tropics." },
+                        mainOrigin: { zh: "中国（广西省）、印度、斯里兰卡。", en: "China (Guangxi Province), India, Sri Lanka." }
+                    },
+                    "罗汉果": {
+                        englishName: "Monk Fruit",
+                        characteristics: { zh: "甜味、圆形果实蔬菜。", en: "Sweet, round fruit vegetable." },
+                        plantingMethod: { zh: "在亚热带种植藤蔓。", en: "Plant vines in subtropics." },
+                        mainOrigin: { zh: "中国（广西省）、泰国、越南。", en: "China (Guangxi Province), Thailand, Vietnam." }
+                    },
+                    "枸杞": {
+                        englishName: "Goji Berry",
+                        characteristics: { zh: "红色小果、药用蔬菜。", en: "Red small fruit, medicinal vegetable." },
+                        plantingMethod: { zh: "在干燥土壤中种植灌木。", en: "Plant bushes in dry soil." },
+                        mainOrigin: { zh: "中国（宁夏）、蒙古、俄罗斯。", en: "China (Ningxia), Mongolia, Russia." }
+                    },
+                    "人参果": {
+                        englishName: "Pepino",
+                        characteristics: { zh: "黄色、甜瓜味果实。", en: "Yellow, melon-flavored fruit." },
+                        plantingMethod: { zh: "在温和气候中种植树苗。", en: "Plant saplings in temperate climate." },
+                        mainOrigin: { zh: "中国（云南省）、新西兰、智利。", en: "China (Yunnan Province), New Zealand, Chile." }
+                    },
+                    "沙棘": {
+                        englishName: "Sea Buckthorn",
+                        characteristics: { zh: "橙色小果、维生素丰富。", en: "Orange small fruit, vitamin-rich." },
+                        plantingMethod: { zh: "在寒冷干燥处种植灌木。", en: "Plant bushes in cold, dry areas." },
+                        mainOrigin: { zh: "中国（内蒙古）、俄罗斯、芬兰。", en: "China (Inner Mongolia), Russia, Finland." }
+                    },
+                    "刺梨": {
+                        englishName: "Rosa Roxburghii",
+                        characteristics: { zh: "黄色、多刺果实。", en: "Yellow, thorny fruit." },
+                        plantingMethod: { zh: "在山区种植灌木。", en: "Plant bushes in mountains." },
+                        mainOrigin: { zh: "中国（贵州省）、越南、缅甸。", en: "China (Guizhou Province), Vietnam, Myanmar." }
+                    },
+                    "树莓": {
+                        englishName: "Raspberry",
+                        characteristics: { zh: "红色、多粒果实。", en: "Red, aggregate fruit." },
+                        plantingMethod: { zh: "在凉爽处种植灌木。", en: "Plant bushes in cool spot." },
+                        mainOrigin: { zh: "俄罗斯、中国（辽宁省）、塞尔维亚。", en: "Russia, China (Liaoning Province), Serbia." }
+                    },
+                    "金橘": {
+                        englishName: "Kumquat",
+                        characteristics: { zh: "小橙、酸甜果实。", en: "Small orange, sour-sweet fruit." },
+                        plantingMethod: { zh: "在亚热带种植树苗。", en: "Plant saplings in subtropics." },
+                        mainOrigin: { zh: "中国（广东省）、日本、巴西。", en: "China (Guangdong Province), Japan, Brazil." }
+                    },
+                    "柚子": {
+                        englishName: "Pomelo",
+                        characteristics: { zh: "大型、酸甜柑橘果实。", en: "Large, sour-sweet citrus fruit." },
+                        plantingMethod: { zh: "在热带从种子或嫁接。", en: "From seeds or graft in tropics." },
+                        mainOrigin: { zh: "中国（广东省）、越南、南非。", en: "China (Guangdong Province), Vietnam, South Africa." }
+                    },
+                    "脐橙": {
+                        englishName: "Navel Orange",
+                        characteristics: { zh: "无籽、甜橙果实。", en: "Seedless, sweet orange fruit." },
+                        plantingMethod: { zh: "在亚热带种植树苗。", en: "Plant saplings in subtropics." },
+                        mainOrigin: { zh: "巴西、美国、中国（江西省）。", en: "Brazil, USA, China (Jiangxi Province)." }
+                    },
+                    "血橙": {
+                        englishName: "Blood Orange",
+                        characteristics: { zh: "红色肉、酸甜果实。", en: "Red flesh, sour-sweet fruit." },
+                        plantingMethod: { zh: "在温和气候中嫁接。", en: "Graft in temperate climate." },
+                        mainOrigin: { zh: "意大利、中国（四川省）、西班牙。", en: "Italy, China (Sichuan Province), Spain." }
+                    },
+                    "丑橘": {
+                        englishName: "Ugli Fruit",
+                        characteristics: { zh: "皱皮、甜美果实。", en: "Wrinkled skin, sweet fruit." },
+                        plantingMethod: { zh: "在亚热带种植树苗。", en: "Plant saplings in subtropics." },
+                        mainOrigin: { zh: "中国（四川省）、日本、韩国。", en: "China (Sichuan Province), Japan, South Korea." }
+                    },
+                    "沃柑": {
+                        englishName: "Wogan Mandarin",
+                        characteristics: { zh: "橙色、晚熟甜果。", en: "Orange, late-ripening sweet fruit." },
+                        plantingMethod: { zh: "在温暖处嫁接树苗。", en: "Graft saplings in warm spot." },
+                        mainOrigin: { zh: "中国（广西省）、泰国、越南。", en: "China (Guangxi Province), Thailand, Vietnam." }
+                    },
+                    "桔子": {
+                        englishName: "Mandarin",
+                        characteristics: { zh: "小巧、易剥皮果实。", en: "Small, easy-peel fruit." },
+                        plantingMethod: { zh: "在亚热带从种子种植。", en: "Plant from seeds in subtropics." },
+                        mainOrigin: { zh: "中国（浙江省）、西班牙、巴西。", en: "China (Zhejiang Province), Spain, Brazil." }
+                    },
+                    "杨桃": {
+                        englishName: "Starfruit",
+                        characteristics: { zh: "星形、酸甜果实。", en: "Star-shaped, sour-sweet fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "马来西亚、中国（广东省）、印度。", en: "Malaysia, China (Guangdong Province), India." }
+                    },
+                    "莲雾": {
+                        englishName: "Wax Apple",
+                        characteristics: { zh: "铃铛形、水润果实。", en: "Bell-shaped, watery fruit." },
+                        plantingMethod: { zh: "在热带从种子种植。", en: "Plant from seeds in tropics." },
+                        mainOrigin: { zh: "中国（台湾省）、泰国、印尼。", en: "China (Taiwan Province), Thailand, Indonesia." }
+                    },
+                    "番石榴": {
+                        englishName: "Guava",
+                        characteristics: { zh: "绿色皮、白肉果实。", en: "Green skin, white flesh fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "印度、中国（广东省）、墨西哥。", en: "India, China (Guangdong Province), Mexico." }
+                    },
+                    "人心果": {
+                        englishName: "Star Apple",
+                        characteristics: { zh: "心形、甜美果实。", en: "Heart-shaped, sweet fruit." },
+                        plantingMethod: { zh: "在热带从种子种植。", en: "Plant from seeds in tropics." },
+                        mainOrigin: { zh: "中国（海南省）、泰国、越南。", en: "China (Hainan Province), Thailand, Vietnam." }
+                    },
+                    "神秘果": {
+                        englishName: "Miracle Fruit",
+                        characteristics: { zh: "红色、变酸为甜果实。", en: "Red, turns sour to sweet fruit." },
+                        plantingMethod: { zh: "在热带种植灌木。", en: "Plant bushes in tropics." },
+                        mainOrigin: { zh: "中国（广东省）、加纳、尼日利亚。", en: "China (Guangdong Province), Ghana, Nigeria." }
+                    },
+                    "蛇皮果": {
+                        englishName: "Salak",
+                        characteristics: { zh: "鳞皮、酸甜果实。", en: "Scaly skin, sour-sweet fruit." },
+                        plantingMethod: { zh: "在热带种植棕榈树。", en: "Plant palm trees in tropics." },
+                        mainOrigin: { zh: "印尼、中国（云南省）、泰国。", en: "Indonesia, China (Yunnan Province), Thailand." }
+                    },
+                    "诺丽果": {
+                        englishName: "Noni",
+                        characteristics: { zh: "臭味、多汁果实。", en: "Smelly, juicy fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "波利尼西亚、中国（海南省）、澳大利亚。", en: "Polynesia, China (Hainan Province), Australia." }
+                    },
+                    "牛油果": {
+                        englishName: "Avocado",
+                        characteristics: { zh: "奶油质、绿色果肉。", en: "Creamy, green flesh." },
+                        plantingMethod: { zh: "在热带嫁接树苗。", en: "Graft saplings in tropics." },
+                        mainOrigin: { zh: "墨西哥、中国（云南省）、秘鲁。", en: "Mexico, China (Yunnan Province), Peru." }
+                    },
+                    "奇异果": {
+                        englishName: "Kiwi Fruit",
+                        characteristics: { zh: "绿色肉、酸甜果实。", en: "Green flesh, sour-sweet fruit." },
+                        plantingMethod: { zh: "在温和处种植藤蔓。", en: "Plant vines in temperate spot." },
+                        mainOrigin: { zh: "中国（陕西省）、新西兰、意大利。", en: "China (Shaanxi Province), New Zealand, Italy." }
+                    },
+                    "红毛丹": {
+                        englishName: "Rambutan",
+                        characteristics: { zh: "毛皮、白肉果实。", en: "Hairy skin, white flesh fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "泰国、中国（海南省）、印尼。", en: "Thailand, China (Hainan Province), Indonesia." }
+                    },
+                    "释迦果": {
+                        englishName: "Soursop",
+                        characteristics: { zh: "鳞皮、奶油味果实。", en: "Scaly skin, creamy flavored fruit." },
+                        plantingMethod: { zh: "在热带从种子种植。", en: "Plant from seeds in tropics." },
+                        mainOrigin: { zh: "中国（广东省）、印度、菲律宾。", en: "China (Guangdong Province), India, Philippines." }
+                    },
+                    "蛋黄果": {
+                        englishName: "Canistel",
+                        characteristics: { zh: "黄色、蛋黄味果实。", en: "Yellow, egg yolk flavored fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "巴西、中国（云南省）、哥伦比亚。", en: "Brazil, China (Yunnan Province), Colombia." }
+                    },
+                    "巴西莓": {
+                        englishName: "Acai Berry",
+                        characteristics: { zh: "紫色小果、抗氧化。", en: "Purple small fruit, antioxidant." },
+                        plantingMethod: { zh: "在热带种植棕榈树。", en: "Plant palm trees in tropics." },
+                        mainOrigin: { zh: "巴西、中国（海南省）、秘鲁。", en: "Brazil, China (Hainan Province), Peru." }
+                    },
+                    "针叶樱桃": {
+                        englishName: "Acerola",
+                        characteristics: { zh: "红色小果、维生素C丰富。", en: "Red small fruit, vitamin C rich." },
+                        plantingMethod: { zh: "在热带种植灌木。", en: "Plant bushes in tropics." },
+                        mainOrigin: { zh: "巴西、中国（广东省）、墨西哥。", en: "Brazil, China (Guangdong Province), Mexico." }
+                    },
+                    "嘉宝果": {
+                        englishName: "Jabuticaba",
+                        characteristics: { zh: "紫色、树生果实。", en: "Purple, tree-borne fruit." },
+                        plantingMethod: { zh: "在亚热带种植树苗。", en: "Plant saplings in subtropics." },
+                        mainOrigin: { zh: "巴西、中国（台湾省）、澳大利亚。", en: "Brazil, China (Taiwan Province), Australia." }
+                    },
+                    "香瓜": {
+                        englishName: "Muskmelon",
+                        characteristics: { zh: "甜香、多汁圆果。", en: "Sweet fragrant, juicy round fruit." },
+                        plantingMethod: { zh: "在温暖土壤中播种藤蔓。", en: "Sow vines in warm soil." },
+                        mainOrigin: { zh: "中国（新疆）、土耳其、伊朗。", en: "China (Xinjiang), Turkey, Iran." }
+                    },
+                    "羊奶果": {
+                        englishName: "Star Apple",
+                        characteristics: { zh: "白色、奶味果实。", en: "White, milky flavored fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "中国（云南省）、泰国、越南。", en: "China (Yunnan Province), Thailand, Vietnam." }
+                    },
+                    "面包果": {
+                        englishName: "Breadfruit",
+                        characteristics: { zh: "大型、淀粉质果实。", en: "Large, starchy fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "波利尼西亚、中国（海南省）、菲律宾。", en: "Polynesia, China (Hainan Province), Philippines." }
+                    },
+                    "诺尼": {
+                        englishName: "Noni",
+                        characteristics: { zh: "臭果、药用果实。", en: "Smelly fruit, medicinal fruit." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "波利尼西亚、中国（海南省）、印度。", en: "Polynesia, China (Hainan Province), India." }
+                    },
+                    "橄榄瓜": {
+                        englishName: "Olive Gourd",
+                        characteristics: { zh: "绿色、橄榄形蔬菜。", en: "Green, olive-shaped vegetable." },
+                        plantingMethod: { zh: "在温暖处播种藤蔓。", en: "Sow vines in warm spot." },
+                        mainOrigin: { zh: "中国（广西省）、印度、泰国。", en: "China (Guangxi Province), India, Thailand." }
+                    },
+                    "茭白": {
+                        englishName: "Wild Rice Stem",
+                        characteristics: { zh: "白色嫩茎、水生蔬菜。", en: "White tender stem, aquatic vegetable." },
+                        plantingMethod: { zh: "在水中种植禾本科。", en: "Plant grasses in water." },
+                        mainOrigin: { zh: "中国（江苏省）、越南、泰国。", en: "China (Jiangsu Province), Vietnam, Thailand." }
+                    },
+                    "菱角": {
+                        englishName: "Water Chestnut",
+                        characteristics: { zh: "角形、水果蔬菜。", en: "Horned, aquatic fruit vegetable." },
+                        plantingMethod: { zh: "在水中种植浮叶植物。", en: "Plant floating leaf plants in water." },
+                        mainOrigin: { zh: "中国（湖南省）、印度、越南。", en: "China (Hunan Province), India, Vietnam." }
+                    },
+                    "慈菇": {
+                        englishName: "Arrowhead",
+                        characteristics: { zh: "球根、水生蔬菜。", en: "Corm, aquatic vegetable." },
+                        plantingMethod: { zh: "在湿地种植块茎。", en: "Plant tubers in wetlands." },
+                        mainOrigin: { zh: "中国（浙江省）、日本、韩国。", en: "China (Zhejiang Province), Japan, South Korea." }
+                    },
+                    "荸荠": {
+                        englishName: "Water Chestnut",
+                        characteristics: { zh: "脆甜、球根蔬菜。", en: "Crisp-sweet, bulb vegetable." },
+                        plantingMethod: { zh: "在水中种植块茎。", en: "Plant tubers in water." },
+                        mainOrigin: { zh: "中国（广西省）、印度、越南。", en: "China (Guangxi Province), India, Vietnam." }
+                    },
+                    "茨菇": {
+                        englishName: "Arrowhead",
+                        characteristics: { zh: "箭头叶、水生蔬菜。", en: "Arrowhead leaves, aquatic vegetable." },
+                        plantingMethod: { zh: "在浅水中种植块茎。", en: "Plant tubers in shallow water." },
+                        mainOrigin: { zh: "中国（湖北省）、日本、泰国。", en: "China (Hubei Province), Japan, Thailand." }
+                    },
+                    "马铃薯": {
+                        englishName: "Potato",
+                        characteristics: { zh: "块茎、淀粉质蔬菜。", en: "Tuber, starchy vegetable." },
+                        plantingMethod: { zh: "在垄沟中种植块茎。", en: "Plant tubers in furrows." },
+                        mainOrigin: { zh: "中国（内蒙古）、印度、俄罗斯。", en: "China (Inner Mongolia), India, Russia." }
+                    },
+                    "魔芋": {
+                        englishName: "Konjac",
+                        characteristics: { zh: "胶质块茎、低卡蔬菜。", en: "Gelatinous tuber, low-calorie vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中种植球茎。", en: "Plant corms in moist soil." },
+                        mainOrigin: { zh: "中国（四川省）、日本、韩国。", en: "China (Sichuan Province), Japan, South Korea." }
+                    },
+                    "牛蒡": {
+                        englishName: "Burdock",
+                        characteristics: { zh: "长根、纤维丰富蔬菜。", en: "Long root, fiber-rich vegetable." },
+                        plantingMethod: { zh: "在深土中播种。", en: "Sow in deep soil." },
+                        mainOrigin: { zh: "中国（山东省）、日本、韩国。", en: "China (Shandong Province), Japan, South Korea." }
+                    },
+                    "菊芋": {
+                        englishName: "Jerusalem Artichoke",
+                        characteristics: { zh: "块茎、甜味蔬菜。", en: "Tuber, sweet vegetable." },
+                        plantingMethod: { zh: "在阳光处种植块茎。", en: "Plant tubers in sunny spot." },
+                        mainOrigin: { zh: "中国（河北省）、法国、美国。", en: "China (Hebei Province), France, USA." }
+                    },
+                    "竹荪": {
+                        englishName: "Bamboo Fungus",
+                        characteristics: { zh: "网状、真菌蔬菜。", en: "Net-like, fungus vegetable." },
+                        plantingMethod: { zh: "在竹林中培养孢子。", en: "Cultivate spores in bamboo groves." },
+                        mainOrigin: { zh: "中国（云南省）、泰国、越南。", en: "China (Yunnan Province), Thailand, Vietnam." }
+                    },
+                    "平菇": {
+                        englishName: "Oyster Mushroom",
+                        characteristics: { zh: "灰色伞、真菌蔬菜。", en: "Gray umbrella, fungus vegetable." },
+                        plantingMethod: { zh: "在稻草上培养孢子。", en: "Cultivate spores on straw." },
+                        mainOrigin: { zh: "中国（河南省）、韩国、日本。", en: "China (Henan Province), South Korea, Japan." }
+                    },
+                    "姬菇": {
+                        englishName: "Shimeji Mushroom",
+                        characteristics: { zh: "小簇、真菌蔬菜。", en: "Small clusters, fungus vegetable." },
+                        plantingMethod: { zh: "在黑暗中培养。", en: "Cultivate in dark." },
+                        mainOrigin: { zh: "中国（福建省）、日本、泰国。", en: "China (Fujian Province), Japan, Thailand." }
+                    },
+                    "鸡枞": {
+                        englishName: "Termitomyces",
+                        characteristics: { zh: "鸡肉味、真菌蔬菜。", en: "Chicken-flavored, fungus vegetable." },
+                        plantingMethod: { zh: "在白蚁巢附近采集。", en: "Harvest near termite nests." },
+                        mainOrigin: { zh: "中国（云南省）、泰国、缅甸。", en: "China (Yunnan Province), Thailand, Myanmar." }
+                    },
+                    "松茸": {
+                        englishName: "Matsutake",
+                        characteristics: { zh: "芳香、真菌蔬菜。", en: "Aromatic, fungus vegetable." },
+                        plantingMethod: { zh: "在松林中自然生长。", en: "Natural growth in pine forests." },
+                        mainOrigin: { zh: "中国（云南省）、日本、韩国。", en: "China (Yunnan Province), Japan, South Korea." }
+                    },
+                    "羊肚菌": {
+                        englishName: "Morel",
+                        characteristics: { zh: "蜂窝状、真菌蔬菜。", en: "Honeycomb-shaped, fungus vegetable." },
+                        plantingMethod: { zh: "在凉爽处人工栽培。", en: "Artificially cultivate in cool spot." },
+                        mainOrigin: { zh: "中国（四川省）、法国、土耳其。", en: "China (Sichuan Province), France, Turkey." }
+                    },
+                    "黑木耳": {
+                        englishName: "Black Fungus",
+                        characteristics: { zh: "黑色胶质、真菌蔬菜。", en: "Black gelatinous, fungus vegetable." },
+                        plantingMethod: { zh: "在木头上培养。", en: "Cultivate on wood." },
+                        mainOrigin: { zh: "中国（黑龙江省）、泰国、越南。", en: "China (Heilongjiang Province), Thailand, Vietnam." }
+                    },
+                    "白灵菇": {
+                        englishName: "White Beech Mushroom",
+                        characteristics: { zh: "白色大伞、真菌蔬菜。", en: "White large umbrella, fungus vegetable." },
+                        plantingMethod: { zh: "在培养基上栽培。", en: "Cultivate on substrate." },
+                        mainOrigin: { zh: "中国（河北省）、日本、韩国。", en: "China (Hebei Province), Japan, South Korea." }
+                    },
+                    "杏鲍菇": {
+                        englishName: "King Oyster Mushroom",
+                        characteristics: { zh: "肉厚、真菌蔬菜。", en: "Thick flesh, fungus vegetable." },
+                        plantingMethod: { zh: "在瓶中培养孢子。", en: "Cultivate spores in bottles." },
+                        mainOrigin: { zh: "中国（福建省）、韩国、日本。", en: "China (Fujian Province), South Korea, Japan." }
+                    },
+                    "猴头菇": {
+                        englishName: "Lion's Mane Mushroom",
+                        characteristics: { zh: "毛球状、真菌蔬菜。", en: "Fuzzy ball-shaped, fungus vegetable." },
+                        plantingMethod: { zh: "在木屑上培养。", en: "Cultivate on sawdust." },
+                        mainOrigin: { zh: "中国（吉林省）、日本、韩国。", en: "China (Jilin Province), Japan, South Korea." }
+                    },
+                    "茶树菇": {
+                        englishName: "Tea Tree Mushroom",
+                        characteristics: { zh: "细长柄、真菌蔬菜。", en: "Slender stem, fungus vegetable." },
+                        plantingMethod: { zh: "在茶树下栽培。", en: "Cultivate under tea trees." },
+                        mainOrigin: { zh: "中国（江西省）、泰国、越南。", en: "China (Jiangxi Province), Thailand, Vietnam." }
+                    },
+                    "姬松茸": {
+                        englishName: "Royal Sun Agaric",
+                        characteristics: { zh: "伞状、营养真菌。", en: "Umbrella-shaped, nutritious fungus." },
+                        plantingMethod: { zh: "在草地上培养。", en: "Cultivate on grassland." },
+                        mainOrigin: { zh: "中国（云南省）、巴西、日本。", en: "China (Yunnan Province), Brazil, Japan." }
+                    },
+                    "灰树花": {
+                        englishName: "Maitake",
+                        characteristics: { zh: "灰色花状、真菌蔬菜。", en: "Gray flower-shaped, fungus vegetable." },
+                        plantingMethod: { zh: "在硬木上培养。", en: "Cultivate on hardwood." },
+                        mainOrigin: { zh: "中国（浙江省）、日本、韩国。", en: "China (Zhejiang Province), Japan, South Korea." }
+                    },
+                    "滑子菇": {
+                        englishName: "Nameko Mushroom",
+                        characteristics: { zh: "滑腻、真菌蔬菜。", en: "Slimy, fungus vegetable." },
+                        plantingMethod: { zh: "在稻草上培养。", en: "Cultivate on straw." },
+                        mainOrigin: { zh: "中国（江苏省）、日本、泰国。", en: "China (Jiangsu Province), Japan, Thailand." }
+                    },
+                    "草菇": {
+                        englishName: "Straw Mushroom",
+                        characteristics: { zh: "草生、真菌蔬菜。", en: "Straw-grown, fungus vegetable." },
+                        plantingMethod: { zh: "在稻草堆中培养。", en: "Cultivate in straw piles." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "秀珍菇": {
+                        englishName: "Phoenix Oyster Mushroom",
+                        characteristics: { zh: "小巧、真菌蔬菜。", en: "Small, fungus vegetable." },
+                        plantingMethod: { zh: "在瓶中栽培孢子。", en: "Cultivate spores in bottles." },
+                        mainOrigin: { zh: "中国（福建省）、韩国、日本。", en: "China (Fujian Province), South Korea, Japan." }
+                    },
+                    "榆黄菇": {
+                        englishName: "Golden Oyster Mushroom",
+                        characteristics: { zh: "黄色簇生、真菌蔬菜。", en: "Yellow clustered, fungus vegetable." },
+                        plantingMethod: { zh: "在榆木上培养。", en: "Cultivate on elm wood." },
+                        mainOrigin: { zh: "中国（山西省）、俄罗斯、韩国。", en: "China (Shanxi Province), Russia, South Korea." }
+                    },
+                    "双孢菇": {
+                        englishName: "Button Mushroom",
+                        characteristics: { zh: "白色伞、真菌蔬菜。", en: "White umbrella, fungus vegetable." },
+                        plantingMethod: { zh: "在堆肥中培养。", en: "Cultivate in compost." },
+                        mainOrigin: { zh: "中国（河北省）、美国、荷兰。", en: "China (Hebei Province), USA, Netherlands." }
+                    },
+                    "牛肝菌": {
+                        englishName: "Boletus",
+                        characteristics: { zh: "肉厚、真菌蔬菜。", en: "Thick flesh, fungus vegetable." },
+                        plantingMethod: { zh: "在松林中自然采集。", en: "Naturally harvest in pine forests." },
+                        mainOrigin: { zh: "中国（云南省）、意大利、法国。", en: "China (Yunnan Province), Italy, France." }
+                    },
+                    "灵芝": {
+                        englishName: "Ganoderma",
+                        characteristics: { zh: "硬质、药用真菌。", en: "Hard, medicinal fungus." },
+                        plantingMethod: { zh: "在木头上人工栽培。", en: "Artificially cultivate on wood." },
+                        mainOrigin: { zh: "中国（安徽省）、韩国、日本。", en: "China (Anhui Province), South Korea, Japan." }
+                    },
+                    "云芝": {
+                        englishName: "Turkey Tail",
+                        characteristics: { zh: "彩色层状、真菌蔬菜。", en: "Colorful layered, fungus vegetable." },
+                        plantingMethod: { zh: "在树干上培养。", en: "Cultivate on tree trunks." },
+                        mainOrigin: { zh: "中国（广东省）、日本、泰国。", en: "China (Guangdong Province), Japan, Thailand." }
+                    },
+                    "紫薯": {
+                        englishName: "Purple Sweet Potato",
+                        characteristics: { zh: "紫色肉、甜美抗氧化块茎。", en: "Purple flesh, sweet antioxidant tuber." },
+                        plantingMethod: { zh: "在温暖土壤中种植藤蔓。", en: "Plant vines in warm soil." },
+                        mainOrigin: { zh: "中国（海南省）、日本、韩国。", en: "China (Hainan Province), Japan, South Korea." }
+                    },
+                    "紫玉米": {
+                        englishName: "Purple Corn",
+                        characteristics: { zh: "紫色粒、抗氧化谷物。", en: "Purple kernels, antioxidant grain." },
+                        plantingMethod: { zh: "在温暖处直接播种。", en: "Direct sow in warm spot." },
+                        mainOrigin: { zh: "中国（云南省）、秘鲁、墨西哥。", en: "China (Yunnan Province), Peru, Mexico." }
+                    },
+                    "黑枸杞": {
+                        englishName: "Black Goji Berry",
+                        characteristics: { zh: "黑色小果、营养丰富。", en: "Black small fruit, nutrient-rich." },
+                        plantingMethod: { zh: "在干燥土壤中种植灌木。", en: "Plant bushes in dry soil." },
+                        mainOrigin: { zh: "中国（青海省）、蒙古、俄罗斯。", en: "China (Qinghai Province), Mongolia, Russia." }
+                    },
+                    "黑番茄": {
+                        englishName: "Black Tomato",
+                        characteristics: { zh: "黑色皮、抗氧化果蔬。", en: "Black skin, antioxidant fruit-vegetable." },
+                        plantingMethod: { zh: "室内育苗移栽阳光处。", en: "Start indoors, transplant to sunny spot." },
+                        mainOrigin: { zh: "中国（山东省）、美国、俄罗斯。", en: "China (Shandong Province), USA, Russia." }
+                    },
+                    "白萝卜": {
+                        englishName: "White Radish",
+                        characteristics: { zh: "白色、脆辣根茎蔬菜。", en: "White, crisp-spicy root vegetable." },
+                        plantingMethod: { zh: "直接播种在肥沃土壤。", en: "Direct sow in fertile soil." },
+                        mainOrigin: { zh: "中国（河北省）、日本、韩国。", en: "China (Hebei Province), Japan, South Korea." }
+                    },
+                    "红萝卜": {
+                        englishName: "Red Carrot",
+                        characteristics: { zh: "红色、甜脆根茎蔬菜。", en: "Red, sweet-crisp root vegetable." },
+                        plantingMethod: { zh: "在松散土壤中播种。", en: "Sow in loose soil." },
+                        mainOrigin: { zh: "中国（河南省）、印度、土耳其。", en: "China (Henan Province), India, Turkey." }
+                    },
+                    "樱桃萝卜": {
+                        englishName: "Cherry Radish",
+                        characteristics: { zh: "小红球、脆嫩蔬菜。", en: "Small red ball, crisp-tender vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中播种。", en: "Sow in cool weather." },
+                        mainOrigin: { zh: "中国（江苏省）、法国、意大利。", en: "China (Jiangsu Province), France, Italy." }
+                    },
+                    "心里美萝卜": {
+                        englishName: "Xinlimei Radish",
+                        characteristics: { zh: "绿皮红心、甜脆蔬菜。", en: "Green skin red heart, sweet-crisp vegetable." },
+                        plantingMethod: { zh: "直接播种在凉爽土壤。", en: "Direct sow in cool soil." },
+                        mainOrigin: { zh: "中国（山东省）、日本、韩国。", en: "China (Shandong Province), Japan, South Korea." }
+                    },
+                    "水萝卜": {
+                        englishName: "Water Radish",
+                        characteristics: { zh: "多汁、白色根茎蔬菜。", en: "Juicy, white root vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中播种。", en: "Sow in moist soil." },
+                        mainOrigin: { zh: "中国（浙江省）、越南、泰国。", en: "China (Zhejiang Province), Vietnam, Thailand." }
+                    },
+                    "苦菊": {
+                        englishName: "Endive",
+                        characteristics: { zh: "苦味、卷叶蔬菜。", en: "Bitter, curly leaf vegetable." },
+                        plantingMethod: { zh: "在凉爽处直接播种。", en: "Direct sow in cool spot." },
+                        mainOrigin: { zh: "中国（河北省）、意大利、法国。", en: "China (Hebei Province), Italy, France." }
+                    },
+                    "罗马生菜": {
+                        englishName: "Romaine Lettuce",
+                        characteristics: { zh: "长叶、脆爽沙拉蔬菜。", en: "Long leaves, crisp salad vegetable." },
+                        plantingMethod: { zh: "在半阴处播种幼苗。", en: "Sow seedlings in partial shade." },
+                        mainOrigin: { zh: "中国（四川省）、美国、西班牙。", en: "China (Sichuan Province), USA, Spain." }
+                    },
+                    "冰草": {
+                        englishName: "Ice Plant",
+                        characteristics: { zh: "晶莹叶、盐味蔬菜。", en: "Crystalline leaves, salty vegetable." },
+                        plantingMethod: { zh: "在干燥土壤中播种。", en: "Sow in dry soil." },
+                        mainOrigin: { zh: "中国（新疆）、南非、澳大利亚。", en: "China (Xinjiang), South Africa, Australia." }
+                    },
+                    "芝麻菜": {
+                        englishName: "Arugula",
+                        characteristics: { zh: "胡椒味、绿色叶蔬菜。", en: "Peppery, green leaf vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（江苏省）、意大利、土耳其。", en: "China (Jiangsu Province), Italy, Turkey." }
+                    },
+                    "西芹": {
+                        englishName: "Celery",
+                        characteristics: { zh: "粗茎、芳香蔬菜。", en: "Thick stalk, aromatic vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中移栽。", en: "Transplant in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、美国、墨西哥。", en: "China (Shandong Province), USA, Mexico." }
+                    },
+                    "香芹": {
+                        englishName: "Italian Parsley",
+                        characteristics: { zh: "细叶、强烈香味蔬菜。", en: "Fine leaves, strong aromatic vegetable." },
+                        plantingMethod: { zh: "在温和土壤中播种。", en: "Sow in temperate soil." },
+                        mainOrigin: { zh: "中国（安徽省）、土耳其、埃及。", en: "China (Anhui Province), Turkey, Egypt." }
+                    },
+                    "茴香茎": {
+                        englishName: "Fennel Bulb",
+                        characteristics: { zh: "球茎、甜香蔬菜。", en: "Bulb, sweet aromatic vegetable." },
+                        plantingMethod: { zh: "在温和气候中播种。", en: "Sow in temperate climate." },
+                        mainOrigin: { zh: "中国（浙江省）、意大利、埃及。", en: "China (Zhejiang Province), Italy, Egypt." }
+                    },
+                    "芥末": {
+                        englishName: "Mustard",
+                        characteristics: { zh: "辛辣叶、调味蔬菜。", en: "Pungent leaves, seasoning vegetable." },
+                        plantingMethod: { zh: "在凉爽处直接播种。", en: "Direct sow in cool spot." },
+                        mainOrigin: { zh: "中国（四川省）、日本、加拿大。", en: "China (Sichuan Province), Japan, Canada." }
+                    },
+                    "紫背天葵": {
+                        englishName: "Purpleback Sunflower",
+                        characteristics: { zh: "紫叶、抗氧化蔬菜。", en: "Purple leaves, antioxidant vegetable." },
+                        plantingMethod: { zh: "在湿润环境中播种。", en: "Sow in moist environment." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "木薯": {
+                        englishName: "Cassava",
+                        characteristics: { zh: "淀粉质、长根块茎。", en: "Starchy, long root tuber." },
+                        plantingMethod: { zh: "在热带种植茎秆。", en: "Plant stems in tropics." },
+                        mainOrigin: { zh: "尼日利亚、中国（广西省）、泰国。", en: "Nigeria, China (Guangxi Province), Thailand." }
+                    },
+                    "紫薯叶": {
+                        englishName: "Purple Sweet Potato Leaves",
+                        characteristics: { zh: "紫色叶、营养蔬菜。", en: "Purple leaves, nutritious vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中种植藤蔓。", en: "Plant vines in warm soil." },
+                        mainOrigin: { zh: "中国（海南省）、日本、菲律宾。", en: "China (Hainan Province), Japan, Philippines." }
+                    },
+                    "甜椒": {
+                        englishName: "Sweet Pepper",
+                        characteristics: { zh: "甜味、多色铃铛蔬菜。", en: "Sweet, multi-color bell vegetable." },
+                        plantingMethod: { zh: "在温暖处育苗移栽。", en: "Seedlings transplanted in warm spot." },
+                        mainOrigin: { zh: "中国（山东省）、墨西哥、西班牙。", en: "China (Shandong Province), Mexico, Spain." }
+                    },
+                    "朝天椒": {
+                        englishName: "Facing Heaven Pepper",
+                        characteristics: { zh: "小辣、向上生蔬菜。", en: "Small spicy, upward-growing vegetable." },
+                        plantingMethod: { zh: "在热带播种灌木。", en: "Sow bushes in tropics." },
+                        mainOrigin: { zh: "中国（湖南省）、印度、泰国。", en: "China (Hunan Province), India, Thailand." }
+                    },
+                    "青椒": {
+                        englishName: "Green Pepper",
+                        characteristics: { zh: "绿色、脆嫩铃铛蔬菜。", en: "Green, crisp-tender bell vegetable." },
+                        plantingMethod: { zh: "在温暖气候中移栽。", en: "Transplant in warm climate." },
+                        mainOrigin: { zh: "中国（河北省）、土耳其、墨西哥。", en: "China (Hebei Province), Turkey, Mexico." }
+                    },
+                    "灯笼椒": {
+                        englishName: "Paprika",
+                        characteristics: { zh: "黄色、甜辣蔬菜。", en: "Yellow, sweet-spicy vegetable." },
+                        plantingMethod: { zh: "在阳光充足处播种。", en: "Sow in sunny spot." },
+                        mainOrigin: { zh: "中国（云南省）、匈牙利、西班牙。", en: "China (Yunnan Province), Hungary, Spain." }
+                    },
+                    "指天椒": {
+                        englishName: "Bird's Eye Chili",
+                        characteristics: { zh: "细长、极辣蔬菜。", en: "Slender, extremely spicy vegetable." },
+                        plantingMethod: { zh: "在热带种植灌木。", en: "Plant bushes in tropics." },
+                        mainOrigin: { zh: "中国（广西省）、泰国、印度。", en: "China (Guangxi Province), Thailand, India." }
+                    },
+                    "藕带": {
+                        englishName: "Lotus Stem",
+                        characteristics: { zh: "嫩藕、脆爽水生蔬菜。", en: "Tender lotus, crisp aquatic vegetable." },
+                        plantingMethod: { zh: "在水中种植莲藕。", en: "Plant lotus roots in water." },
+                        mainOrigin: { zh: "中国（湖北省）、越南、印度。", en: "China (Hubei Province), Vietnam, India." }
+                    },
+                    "茭白笋": {
+                        englishName: "Wild Rice Shoot",
+                        characteristics: { zh: "白色嫩笋、水生蔬菜。", en: "White tender shoot, aquatic vegetable." },
+                        plantingMethod: { zh: "在浅水中种植。", en: "Plant in shallow water." },
+                        mainOrigin: { zh: "中国（江苏省）、泰国、越南。", en: "China (Jiangsu Province), Thailand, Vietnam." }
+                    },
+                    "荔浦芋": {
+                        englishName: "Lipu Taro",
+                        characteristics: { zh: "大块、香糯块茎。", en: "Large, fragrant-glutinous tuber." },
+                        plantingMethod: { zh: "在湿润土壤中种植块茎。", en: "Plant tubers in moist soil." },
+                        mainOrigin: { zh: "中国（广西省）、泰国、菲律宾。", en: "China (Guangxi Province), Thailand, Philippines." }
+                    },
+                    "槟榔芋": {
+                        englishName: "Betel Nut Taro",
+                        characteristics: { zh: "紫纹、淀粉质块茎。", en: "Purple-veined, starchy tuber." },
+                        plantingMethod: { zh: "在热带种植块茎。", en: "Plant tubers in tropics." },
+                        mainOrigin: { zh: "中国（海南省）、马来西亚、印尼。", en: "China (Hainan Province), Malaysia, Indonesia." }
+                    },
+                    "慈菇": {
+                        englishName: "Arrowhead",
+                        characteristics: { zh: "小球根、水生蔬菜。", en: "Small bulb, aquatic vegetable." },
+                        plantingMethod: { zh: "在湿地种植块茎。", en: "Plant tubers in wetlands." },
+                        mainOrigin: { zh: "中国（浙江省）、日本、韩国。", en: "China (Zhejiang Province), Japan, South Korea." }
+                    },
+                    "刺老包": {
+                        englishName: "Thorny Vegetable",
+                        characteristics: { zh: "刺茎、野生蔬菜。", en: "Thorny stem, wild vegetable." },
+                        plantingMethod: { zh: "在林中自然生长。", en: "Natural growth in forests." },
+                        mainOrigin: { zh: "中国（云南省）、泰国、缅甸。", en: "China (Yunnan Province), Thailand, Myanmar." }
+                    },
+                    "鱼香菜": {
+                        englishName: "Fish Herb",
+                        characteristics: { zh: "鱼腥味、叶茎蔬菜。", en: "Fishy-flavored, leaf-stem vegetable." },
+                        plantingMethod: { zh: "在湿润处扦插。", en: "Cuttings in moist spot." },
+                        mainOrigin: { zh: "中国（四川省）、越南、泰国。", en: "China (Sichuan Province), Vietnam, Thailand." }
+                    },
+                    "灰条菜": {
+                        englishName: "Gray Stripe Vegetable",
+                        characteristics: { zh: "灰绿叶、耐旱蔬菜。", en: "Gray-green leaves, drought-tolerant vegetable." },
+                        plantingMethod: { zh: "在贫瘠土壤中播种。", en: "Sow in poor soil." },
+                        mainOrigin: { zh: "中国（内蒙古）、俄罗斯、哈萨克斯坦。", en: "China (Inner Mongolia), Russia, Kazakhstan." }
+                    },
+                    "马兰头": {
+                        englishName: "Malantou",
+                        characteristics: { zh: "嫩叶、野生春菜。", en: "Tender leaves, wild spring vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（江苏省）、韩国、日本。", en: "China (Jiangsu Province), South Korea, Japan." }
+                    },
+                    "枸杞叶": {
+                        englishName: "Goji Leaves",
+                        characteristics: { zh: "绿色叶、营养蔬菜。", en: "Green leaves, nutritious vegetable." },
+                        plantingMethod: { zh: "在干燥处种植灌木。", en: "Plant bushes in dry spot." },
+                        mainOrigin: { zh: "中国（宁夏）、蒙古、俄罗斯。", en: "China (Ningxia), Mongolia, Russia." }
+                    },
+                    "桑叶": {
+                        englishName: "Mulberry Leaves",
+                        characteristics: { zh: "绿色叶、丝蚕饲料蔬菜。", en: "Green leaves, silkworm feed vegetable." },
+                        plantingMethod: { zh: "在温和气候中种植树。", en: "Plant trees in temperate climate." },
+                        mainOrigin: { zh: "中国（江苏省）、印度、日本。", en: "China (Jiangsu Province), India, Japan." }
+                    },
+                    "葡萄叶": {
+                        englishName: "Grape Leaves",
+                        characteristics: { zh: "大叶、包裹用蔬菜。", en: "Large leaves, wrapping vegetable." },
+                        plantingMethod: { zh: "在排水土壤中种植藤蔓。", en: "Plant vines in drained soil." },
+                        mainOrigin: { zh: "中国（新疆）、土耳其、希腊。", en: "China (Xinjiang), Turkey, Greece." }
+                    },
+                    "甜菜叶": {
+                        englishName: "Beet Leaves",
+                        characteristics: { zh: "红色茎叶、营养蔬菜。", en: "Red stem-leaves, nutritious vegetable." },
+                        plantingMethod: { zh: "在松散土壤中播种。", en: "Sow in loose soil." },
+                        mainOrigin: { zh: "中国（内蒙古）、俄罗斯、法国。", en: "China (Inner Mongolia), Russia, France." }
+                    },
+                    "萝卜叶": {
+                        englishName: "Radish Leaves",
+                        characteristics: { zh: "绿色叶、脆嫩蔬菜。", en: "Green leaves, crisp-tender vegetable." },
+                        plantingMethod: { zh: "在肥沃土壤中播种根茎。", en: "Sow roots in fertile soil." },
+                        mainOrigin: { zh: "中国（山东省）、日本、韩国。", en: "China (Shandong Province), Japan, South Korea." }
+                    },
+                    "胡萝卜叶": {
+                        englishName: "Carrot Leaves",
+                        characteristics: { zh: "羽状叶、芳香蔬菜。", en: "Feathery leaves, aromatic vegetable." },
+                        plantingMethod: { zh: "在松散土壤中播种。", en: "Sow in loose soil." },
+                        mainOrigin: { zh: "中国（河南省）、美国、俄罗斯。", en: "China (Henan Province), USA, Russia." }
+                    },
+                    "橄榄菜": {
+                        englishName: "Pickled Mustard with Olive",
+                        characteristics: { zh: "腌制叶、咸香蔬菜。", en: "Pickled leaves, salty-aromatic vegetable." },
+                        plantingMethod: { zh: "在地中海气候中种植树。", en: "Plant trees in Mediterranean climate." },
+                        mainOrigin: { zh: "中国（广东省）、西班牙、意大利。", en: "China (Guangdong Province), Spain, Italy." }
+                    },
+                    "酸模": {
+                        englishName: "Sorrel",
+                        characteristics: { zh: "酸味叶、绿色蔬菜。", en: "Sour leaves, green vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（河北省）、法国、俄罗斯。", en: "China (Hebei Province), France, Russia." }
+                    },
+                    "苔菜": {
+                        englishName: "Tatsoi",
+                        characteristics: { zh: "卷叶、苦甜蔬菜。", en: "Curly leaves, bitter-sweet vegetable." },
+                        plantingMethod: { zh: "在湿润环境中播种。", en: "Sow in moist environment." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "荆芥": {
+                        englishName: "Catnip",
+                        characteristics: { zh: "芳香叶、调味蔬菜。", en: "Aromatic leaves, seasoning vegetable." },
+                        plantingMethod: { zh: "在阳光充足处播种。", en: "Sow in sunny spot." },
+                        mainOrigin: { zh: "中国（安徽省）、印度、泰国。", en: "China (Anhui Province), India, Thailand." }
+                    },
+                    "鼠尾草": {
+                        englishName: "Sage",
+                        characteristics: { zh: "灰绿叶、香料蔬菜。", en: "Gray-green leaves, spice vegetable." },
+                        plantingMethod: { zh: "在干燥土壤中扦插。", en: "Cuttings in dry soil." },
+                        mainOrigin: { zh: "中国（云南省）、意大利、土耳其。", en: "China (Yunnan Province), Italy, Turkey." }
+                    },
+                    "迷迭香": {
+                        englishName: "Rosemary",
+                        characteristics: { zh: "针叶、强烈香蔬菜。", en: "Needle leaves, strong aromatic vegetable." },
+                        plantingMethod: { zh: "在温和气候中扦插。", en: "Cuttings in temperate climate." },
+                        mainOrigin: { zh: "中国（四川省）、法国、西班牙。", en: "China (Sichuan Province), France, Spain." }
+                    },
+                    "百里香": {
+                        englishName: "Thyme",
+                        characteristics: { zh: "小叶、芳香调味蔬菜。", en: "Small leaves, aromatic seasoning vegetable." },
+                        plantingMethod: { zh: "在排水良好土壤中播种。", en: "Sow in well-drained soil." },
+                        mainOrigin: { zh: "中国（浙江省）、土耳其、埃及。", en: "China (Zhejiang Province), Turkey, Egypt." }
+                    },
+                    "牛至": {
+                        englishName: "Oregano",
+                        characteristics: { zh: "辣香叶、披萨调味蔬菜。", en: "Spicy aromatic leaves, pizza seasoning vegetable." },
+                        plantingMethod: { zh: "在温暖处播种。", en: "Sow in warm spot." },
+                        mainOrigin: { zh: "中国（河北省）、意大利、希腊。", en: "China (Hebei Province), Italy, Greece." }
+                    },
+                    "龙蒿": {
+                        englishName: "Tarragon",
+                        characteristics: { zh: "细叶、茴香味蔬菜。", en: "Fine leaves, anise-flavored vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中扦插。", en: "Cuttings in cool soil." },
+                        mainOrigin: { zh: "中国（内蒙古）、法国、俄罗斯。", en: "China (Inner Mongolia), France, Russia." }
+                    },
+                    "薰衣草": {
+                        englishName: "Lavender",
+                        characteristics: { zh: "紫花、芳香叶蔬菜。", en: "Purple flowers, aromatic leaf vegetable." },
+                        plantingMethod: { zh: "在干燥阳光处种植。", en: "Plant in dry, sunny spot." },
+                        mainOrigin: { zh: "中国（新疆）、法国、英国。", en: "China (Xinjiang), France, UK." }
+                    },
+                    "柑橘叶": {
+                        englishName: "Citrus Leaves",
+                        characteristics: { zh: "绿色叶、柑橘香蔬菜。", en: "Green leaves, citrus aromatic vegetable." },
+                        plantingMethod: { zh: "在亚热带种植树苗。", en: "Plant saplings in subtropics." },
+                        mainOrigin: { zh: "中国（湖南省）、巴西、美国。", en: "China (Hunan Province), Brazil, USA." }
+                    },
+                    "咖喱叶": {
+                        englishName: "Curry Leaves",
+                        characteristics: { zh: "芳香叶、印度调味蔬菜。", en: "Aromatic leaves, Indian seasoning vegetable." },
+                        plantingMethod: { zh: "在热带种植树苗。", en: "Plant saplings in tropics." },
+                        mainOrigin: { zh: "中国（云南省）、印度、斯里兰卡。", en: "China (Yunnan Province), India, Sri Lanka." }
+                    },
+                    "香茅": {
+                        englishName: "Lemongrass",
+                        characteristics: { zh: "长叶、柠檬香蔬菜。", en: "Long leaves, lemon aromatic vegetable." },
+                        plantingMethod: { zh: "在湿热环境中种植。", en: "Plant in humid-hot environment." },
+                        mainOrigin: { zh: "中国（广西省）、泰国、印尼。", en: "China (Guangxi Province), Thailand, Indonesia." }
+                    },
+                    "柠檬草": {
+                        englishName: "Lemongrass",
+                        characteristics: { zh: "纤细叶、柠檬味蔬菜。", en: "Slender leaves, lemon-flavored vegetable." },
+                        plantingMethod: { zh: "在热带扦插丛生。", en: "Cuttings in clumped tropics." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "九层塔": {
+                        englishName: "Thai Basil",
+                        characteristics: { zh: "紫茎、甜香叶蔬菜。", en: "Purple stem, sweet aromatic leaf vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中播种。", en: "Sow in warm soil." },
+                        mainOrigin: { zh: "中国（台湾省）、泰国、越南。", en: "China (Taiwan Province), Thailand, Vietnam." }
+                    },
+                    "紫锥菊": {
+                        englishName: "Echinacea",
+                        characteristics: { zh: "紫花叶、药用蔬菜。", en: "Purple flower-leaves, medicinal vegetable." },
+                        plantingMethod: { zh: "在阳光充足处播种。", en: "Sow in sunny spot." },
+                        mainOrigin: { zh: "中国（山东省）、美国、加拿大。", en: "China (Shandong Province), USA, Canada." }
+                    },
+                    "金银花": {
+                        englishName: "Honeysuckle",
+                        characteristics: { zh: "黄色花、药用蔬菜。", en: "Yellow flowers, medicinal vegetable." },
+                        plantingMethod: { zh: "在温和气候中种植藤蔓。", en: "Plant vines in temperate climate." },
+                        mainOrigin: { zh: "中国（河南省）、韩国、日本。", en: "China (Henan Province), South Korea, Japan." }
+                    },
+                    "蒲公英根": {
+                        englishName: "Dandelion Root",
+                        characteristics: { zh: "苦根、药用蔬菜。", en: "Bitter root, medicinal vegetable." },
+                        plantingMethod: { zh: "在阳光处自然生长。", en: "Natural growth in sunny spot." },
+                        mainOrigin: { zh: "中国（河北省）、法国、美国。", en: "China (Hebei Province), France, USA." }
+                    },
+                    "决明子": {
+                        englishName: "Cassia Seed",
+                        characteristics: { zh: "种子、药用蔬菜。", en: "Seeds, medicinal vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中播种。", en: "Sow in warm soil." },
+                        mainOrigin: { zh: "中国（安徽省）、印度、埃及。", en: "China (Anhui Province), India, Egypt." }
+                    },
+                    "黄瓜藤": {
+                        englishName: "Cucumber Vine",
+                        characteristics: { zh: "嫩藤、多汁蔬菜。", en: "Tender vine, juicy vegetable." },
+                        plantingMethod: { zh: "在温暖处播种藤蔓。", en: "Sow vines in warm spot." },
+                        mainOrigin: { zh: "中国（山东省）、俄罗斯、土耳其。", en: "China (Shandong Province), Russia, Turkey." }
+                    },
+                    "南瓜叶": {
+                        englishName: "Pumpkin Leaves",
+                        characteristics: { zh: "大叶、毛茸蔬菜。", en: "Large leaves, fuzzy vegetable." },
+                        plantingMethod: { zh: "在阳光充足处种植藤蔓。", en: "Plant vines in sunny spot." },
+                        mainOrigin: { zh: "中国（山东省）、印度、俄罗斯。", en: "China (Shandong Province), India, Russia." }
+                    },
+                    "丝瓜叶": {
+                        englishName: "Luffa Leaves",
+                        characteristics: { zh: "心形叶、嫩菜蔬菜。", en: "Heart-shaped leaves, tender vegetable." },
+                        plantingMethod: { zh: "在温暖气候中种植藤蔓。", en: "Plant vines in warm climate." },
+                        mainOrigin: { zh: "中国（浙江省）、印度、越南。", en: "China (Zhejiang Province), India, Vietnam." }
+                    },
+                    "苦瓜叶": {
+                        englishName: "Bitter Gourd Leaves",
+                        characteristics: { zh: "掌状叶、苦味蔬菜。", en: "Palmate leaves, bitter vegetable." },
+                        plantingMethod: { zh: "在热带种植藤蔓。", en: "Plant vines in tropics." },
+                        mainOrigin: { zh: "中国（广西省）、印度、菲律宾。", en: "China (Guangxi Province), India, Philippines." }
+                    },
+                    "豆瓣菜": {
+                        englishName: "Watercress",
+                        characteristics: { zh: "圆叶、水生蔬菜。", en: "Round leaves, aquatic vegetable." },
+                        plantingMethod: { zh: "在水中扦插。", en: "Cuttings in water." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "水芹": {
+                        englishName: "Water Celery",
+                        characteristics: { zh: "水生茎叶、芳香蔬菜。", en: "Aquatic stem-leaves, aromatic vegetable." },
+                        plantingMethod: { zh: "在浅水中种植。", en: "Plant in shallow water." },
+                        mainOrigin: { zh: "中国（江苏省）、越南、泰国。", en: "China (Jiangsu Province), Vietnam, Thailand." }
+                    },
+                    "菱白": {
+                        englishName: "Water Chestnut Leaves",
+                        characteristics: { zh: "菱形叶、水生蔬菜。", en: "Diamond-shaped leaves, aquatic vegetable." },
+                        plantingMethod: { zh: "在水中种植浮叶。", en: "Plant floating leaves in water." },
+                        mainOrigin: { zh: "中国（湖南省）、印度、越南。", en: "China (Hunan Province), India, Vietnam." }
+                    },
+                    "芡实": {
+                        englishName: "Fox Nut",
+                        characteristics: { zh: "种子、水生蔬菜。", en: "Seeds, aquatic vegetable." },
+                        plantingMethod: { zh: "在水中种植莲科植物。", en: "Plant lotus family in water." },
+                        mainOrigin: { zh: "中国（江苏省）、印度、越南。", en: "China (Jiangsu Province), India, Vietnam." }
+                    },
+                    "野蒜": {
+                        englishName: "Wild Garlic",
+                        characteristics: { zh: "葱味叶、野生蔬菜。", en: "Onion-flavored leaves, wild vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中自然生长。", en: "Natural growth in cool soil." },
+                        mainOrigin: { zh: "中国（东北省）、俄罗斯、韩国。", en: "China (Northeast Provinces), Russia, South Korea." }
+                    },
+                    "山葱": {
+                        englishName: "Mountain Onion",
+                        characteristics: { zh: "细长叶、山地蔬菜。", en: "Slender leaves, mountain vegetable." },
+                        plantingMethod: { zh: "在山区播种或分株。", en: "Sow or divide in mountains." },
+                        mainOrigin: { zh: "中国（云南省）、日本、韩国。", en: "China (Yunnan Province), Japan, South Korea." }
+                    },
+                    "野韭": {
+                        englishName: "Wild Chives",
+                        characteristics: { zh: "扁叶、野生葱味蔬菜。", en: "Flat leaves, wild onion-flavored vegetable." },
+                        plantingMethod: { zh: "在肥沃土壤中自然生长。", en: "Natural growth in fertile soil." },
+                        mainOrigin: { zh: "中国（河北省）、土耳其、埃及。", en: "China (Hebei Province), Turkey, Egypt." }
+                    },
+                    "竹叶菜": {
+                        englishName: "Bamboo Leaf Vegetable",
+                        characteristics: { zh: "细叶、嫩脆蔬菜。", en: "Fine leaves, tender-crisp vegetable." },
+                        plantingMethod: { zh: "在竹林下播种。", en: "Sow under bamboo groves." },
+                        mainOrigin: { zh: "中国（浙江省）、日本、泰国。", en: "China (Zhejiang Province), Japan, Thailand." }
+                    },
+                    "松菜": {
+                        englishName: "Komatsuna",
+                        characteristics: { zh: "绿色叶、营养蔬菜。", en: "Green leaves, nutritious vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（上海市）、日本、韩国。", en: "China (Shanghai), Japan, South Korea." }
+                    },
+                    "油麦菜": {
+                        englishName: "Youmaicai",
+                        characteristics: { zh: "油绿叶、脆嫩蔬菜。", en: "Oily green leaves, crisp-tender vegetable." },
+                        plantingMethod: { zh: "在半阴处直接播种。", en: "Direct sow in partial shade." },
+                        mainOrigin: { zh: "中国（广东省）、泰国、越南。", en: "China (Guangdong Province), Thailand, Vietnam." }
+                    },
+                    "娃娃菜": {
+                        englishName: "Baby Bok Choy",
+                        characteristics: { zh: "小型白菜、嫩叶蔬菜。", en: "Small bok choy, tender leaf vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中移栽。", en: "Transplant in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、韩国、日本。", en: "China (Shandong Province), South Korea, Japan." }
+                    },
+                    "青梗菜": {
+                        englishName: "Green Stem Choy",
+                        characteristics: { zh: "绿茎、白菜类蔬菜。", en: "Green stem, bok choy-like vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中播种。", en: "Sow in moist soil." },
+                        mainOrigin: { zh: "中国（江苏省）、泰国、越南。", en: "China (Jiangsu Province), Thailand, Vietnam." }
+                    },
+                    "奶白菜": {
+                        englishName: "Milky Bok Choy",
+                        characteristics: { zh: "白色茎、嫩菜蔬菜。", en: "White stem, tender vegetable." },
+                        plantingMethod: { zh: "在凉爽处移栽幼苗。", en: "Transplant seedlings in cool spot." },
+                        mainOrigin: { zh: "中国（四川省）、日本、韩国。", en: "China (Sichuan Province), Japan, South Korea." }
+                    },
+                    "鸡毛菜": {
+                        englishName: "Chicken Feather Vegetable",
+                        characteristics: { zh: "小叶、速生蔬菜。", en: "Small leaves, fast-growing vegetable." },
+                        plantingMethod: { zh: "在肥沃土壤中播种。", en: "Sow in fertile soil." },
+                        mainOrigin: { zh: "中国（浙江省）、泰国、越南。", en: "China (Zhejiang Province), Thailand, Vietnam." }
+                    },
+                    "苤蓝": {
+                        englishName: "Kohlrabi",
+                        characteristics: { zh: "球茎、脆爽蔬菜。", en: "Bulbous stem, crisp vegetable." },
+                        plantingMethod: { zh: "在凉爽天气中播种。", en: "Sow in cool weather." },
+                        mainOrigin: { zh: "中国（山东省）、德国、荷兰。", en: "China (Shandong Province), Germany, Netherlands." }
+                    },
+                    "球茎芹菜": {
+                        englishName: "Celeriac",
+                        characteristics: { zh: "球根、芳香蔬菜。", en: "Bulbous root, aromatic vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中移栽。", en: "Transplant in cool soil." },
+                        mainOrigin: { zh: "中国（河北省）、法国、意大利。", en: "China (Hebei Province), France, Italy." }
+                    },
+                    "欧洲防风草": {
+                        englishName: "Parsnip",
+                        characteristics: { zh: "长根、甜味蔬菜。", en: "Long root, sweet vegetable." },
+                        plantingMethod: { zh: "在深土中播种。", en: "Sow in deep soil." },
+                        mainOrigin: { zh: "中国（内蒙古）、法国、英国。", en: "China (Inner Mongolia), France, UK." }
+                    },
+                    "欧洲萝卜": {
+                        englishName: "European Radish",
+                        characteristics: { zh: "长白根、辣味蔬菜。", en: "Long white root, spicy vegetable." },
+                        plantingMethod: { zh: "在松散土壤中播种。", en: "Sow in loose soil." },
+                        mainOrigin: { zh: "中国（河南省）、德国、波兰。", en: "China (Henan Province), Germany, Poland." }
+                    },
+                    "欧洲甜菜": {
+                        englishName: "Sugar Beet",
+                        characteristics: { zh: "红根、糖质蔬菜。", en: "Red root, sugary vegetable." },
+                        plantingMethod: { zh: "直接播种在肥沃土。", en: "Direct sow in fertile soil." },
+                        mainOrigin: { zh: "中国（内蒙古）、俄罗斯、法国。", en: "China (Inner Mongolia), Russia, France." }
+                    },
+                    "球葱": {
+                        englishName: "Shallot",
+                        characteristics: { zh: "小球根、温和味蔬菜。", en: "Small bulb, mild-flavored vegetable." },
+                        plantingMethod: { zh: "在排水土壤中种植。", en: "Plant in drained soil." },
+                        mainOrigin: { zh: "中国（河北省）、法国、意大利。", en: "China (Hebei Province), France, Italy." }
+                    },
+                    "珠葱": {
+                        englishName: "Pearl Onion",
+                        characteristics: { zh: "小葱球、多层蔬菜。", en: "Small onion bulbs, layered vegetable." },
+                        plantingMethod: { zh: "在凉爽处种植鳞茎。", en: "Plant bulbs in cool spot." },
+                        mainOrigin: { zh: "中国（山东省）、泰国、越南。", en: "China (Shandong Province), Thailand, Vietnam." }
+                    },
+                    "分葱": {
+                        englishName: "Bunching Onion",
+                        characteristics: { zh: "分枝茎、葱味蔬菜。", en: "Branched stem, onion-flavored vegetable." },
+                        plantingMethod: { zh: "在肥沃土壤中分株。", en: "Divide in fertile soil." },
+                        mainOrigin: { zh: "中国（广东省）、日本、韩国。", en: "China (Guangdong Province), Japan, South Korea." }
+                    },
+                    "京葱": {
+                        englishName: "Welsh Onion",
+                        characteristics: { zh: "长白茎、甜葱蔬菜。", en: "Long white stem, sweet onion vegetable." },
+                        plantingMethod: { zh: "在垄沟中种植。", en: "Plant in furrows." },
+                        mainOrigin: { zh: "中国（北京市）、日本、韩国。", en: "China (Beijing), Japan, South Korea." }
+                    },
+                    "韭黄": {
+                        englishName: "Blanched Chives",
+                        characteristics: { zh: "黄色叶、嫩葱味蔬菜。", en: "Yellow leaves, tender onion-flavored vegetable." },
+                        plantingMethod: { zh: "在黑暗中软化栽培。", en: "Blanch cultivate in dark." },
+                        mainOrigin: { zh: "中国（河北省）、韩国、日本。", en: "China (Hebei Province), South Korea, Japan." }
+                    },
+                    "蒜黄": {
+                        englishName: "Blanched Garlic",
+                        characteristics: { zh: "黄色茎、蒜味蔬菜。", en: "Yellow stem, garlic-flavored vegetable." },
+                        plantingMethod: { zh: "在无光处栽培蒜瓣。", en: "Cultivate cloves in no light." },
+                        mainOrigin: { zh: "中国（山东省）、韩国、日本。", en: "China (Shandong Province), South Korea, Japan." }
+                    },
+                    "葱苗": {
+                        englishName: "Green Onion Sprouts",
+                        characteristics: { zh: "绿色嫩苗、芳香蔬菜。", en: "Green tender sprouts, aromatic vegetable." },
+                        plantingMethod: { zh: "在凉爽土壤中播种。", en: "Sow in cool soil." },
+                        mainOrigin: { zh: "中国（江苏省）、泰国、越南。", en: "China (Jiangsu Province), Thailand, Vietnam." }
+                    },
+                    "姜芽": {
+                        englishName: "Ginger Sprouts",
+                        characteristics: { zh: "嫩芽、辛辣蔬菜。", en: "Tender sprouts, spicy vegetable." },
+                        plantingMethod: { zh: "在温暖处发芽根茎。", en: "Sprout rhizomes in warm spot." },
+                        mainOrigin: { zh: "中国（山东省）、印度、印尼。", en: "China (Shandong Province), India, Indonesia." }
+                    },
+                    "豆薯": {
+                        englishName: "Jicama",
+                        characteristics: { zh: "脆甜块茎、豆科蔬菜。", en: "Crisp-sweet tuber, legume vegetable." },
+                        plantingMethod: { zh: "在温暖土壤中种植藤蔓。", en: "Plant vines in warm soil." },
+                        mainOrigin: { zh: "中国（云南省）、墨西哥、菲律宾。", en: "China (Yunnan Province), Mexico, Philippines." }
+                    },
+                    "葛根": {
+                        englishName: "Kudzu Root",
+                        characteristics: { zh: "长根、药用蔬菜。", en: "Long root, medicinal vegetable." },
+                        plantingMethod: { zh: "在山区种植藤蔓。", en: "Plant vines in mountains." },
+                        mainOrigin: { zh: "中国（广西省）、日本、韩国。", en: "China (Guangxi Province), Japan, South Korea." }
+                    },
+                    "淮山": {
+                        englishName: "Chinese Yam",
+                        characteristics: { zh: "白色块茎、滋补蔬菜。", en: "White tuber, tonic vegetable." },
+                        plantingMethod: { zh: "在湿润土壤中种植藤蔓。", en: "Plant vines in moist soil." },
+                        mainOrigin: { zh: "中国（河南省）、日本、韩国。", en: "China (Henan Province), Japan, South Korea." }
+                    },
+                    "铁棍山药": {
+                        englishName: "Iron Stick Yam",
+                        characteristics: { zh: "细长、铁锈色块茎。", en: "Slender, rust-colored tuber." },
+                        plantingMethod: { zh: "在深土中种植藤蔓。", en: "Plant vines in deep soil." },
+                        mainOrigin: { zh: "中国（河南省）、日本、韩国。", en: "China (Henan Province), Japan, South Korea." }
+                    },
+                    "紫淮山": {
+                        englishName: "Purple Chinese Yam",
+                        characteristics: { zh: "紫色肉、营养块茎。", en: "Purple flesh, nutritious tuber." },
+                        plantingMethod: { zh: "在温暖处种植藤蔓。", en: "Plant vines in warm spot." },
+                        mainOrigin: { zh: "中国（广西省）、日本、菲律宾。", en: "China (Guangxi Province), Japan, Philippines." }
+                    },
+                    "玉竹": {
+                        englishName: "Solomon's Seal",
+                        characteristics: { zh: "根茎、药用甜蔬菜。", en: "Rhizome, medicinal sweet vegetable." },
+                        plantingMethod: { zh: "在阴凉土壤中种植。", en: "Plant in shady soil." },
+                        mainOrigin: { zh: "中国（四川省）、韩国、日本。", en: "China (Sichuan Province), South Korea, Japan." }
+                    },
+                    "黄精": {
+                        englishName: "Polygonatum",
+                        characteristics: { zh: "块根、滋补蔬菜。", en: "Tuberous root, tonic vegetable." },
+                        plantingMethod: { zh: "在湿润林中种植。", en: "Plant in moist forests." },
+                        mainOrigin: { zh: "中国（安徽省）、韩国、日本。", en: "China (Anhui Province), South Korea, Japan." }
+                    },
+                    "百合": {
+                        englishName: "Lily Bulb",
+                        characteristics: { zh: "鳞茎、甜脆蔬菜。", en: "Scaly bulb, sweet-crisp vegetable." },
+                        plantingMethod: { zh: "在排水土壤中种植球根。", en: "Plant bulbs in drained soil." },
+                        mainOrigin: { zh: "中国（甘肃省）、日本、荷兰。", en: "China (Gansu Province), Japan, Netherlands." }
+                    },
+                    "天门冬": {
+                        englishName: "Asparagus Cochinchinensis",
+                        characteristics: { zh: "根茎、药用蔬菜。", en: "Rhizome, medicinal vegetable." },
+                        plantingMethod: { zh: "在凉爽处种植藤蔓。", en: "Plant vines in cool spot." },
+                        mainOrigin: { zh: "中国（贵州省）、印度、尼泊尔。", en: "China (Guizhou Province), India, Nepal." }
+                    },
+                    "石刁柏": {
+                        englishName: "Asparagus",
+                        characteristics: { zh: "嫩茎、绿色营养蔬菜。", en: "Tender stem, green nutritious vegetable." },
+                        plantingMethod: { zh: "在排水良好土壤中种植冠芽。", en: "Plant crowns in well-drained soil." },
+                        mainOrigin: { zh: "中国（山东省）、秘鲁、墨西哥。", en: "China (Shandong Province), Peru, Mexico." }
+                    }
+                };
+                const searchInput = document.getElementById('product-search-input');
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        performProductSearch();
+                    }
+                });
+                searchInput.addEventListener('blur', performProductSearch);
+                performProductSearch = function() { // 赋值给全局变量
+                    let query = searchInput.value.trim();
+                    if (!query) {
+                        resetProductResults();
+                        return;
+                    }
+                    // 支持英文输入：查找匹配英文名的中文键
+                    let foundKey = null;
+                    for (const key in fruitsAndVegs) {
+                        if (key.toLowerCase() === query.toLowerCase() || fruitsAndVegs[key].englishName.toLowerCase() === query.toLowerCase()) {
+                            foundKey = key;
+                            break;
+                        }
+                    }
+                    if (foundKey) {
+                        const info = fruitsAndVegs[foundKey];
+                        const lang = currentLang;
+                        // 美化排版：使用列表
+                        document.getElementById('product-characteristics').innerHTML = `<ul><li>${info.characteristics[lang]}</li></ul>`;
+                        document.getElementById('product-planting-method').innerHTML = `<ul><li>${info.plantingMethod[lang]}</li></ul>`;
+                        document.getElementById('product-main-origin').innerHTML = `<ul><li>${info.mainOrigin[lang]}</li></ul>`;
+                    } else {
+                        const placeholder = lang === 'zh' ? '请输入中文的蔬菜或者水果' : 'Please enter a vegetable or fruit in English';
+                        document.getElementById('product-characteristics').textContent = placeholder;
+                        document.getElementById('product-planting-method').textContent = placeholder;
+                        document.getElementById('product-main-origin').textContent = placeholder;
+                    }
+                };
+                function resetProductResults() {
+                    const placeholder = currentLang === 'zh' ? '请输入蔬菜或者水果' : 'Please enter a vegetable or fruit';
+                    document.getElementById('product-characteristics').textContent = placeholder;
+                    document.getElementById('product-planting-method').textContent = placeholder;
+                    document.getElementById('product-main-origin').textContent = placeholder;
+                }
+                // 初始搜索
+                performProductSearch();
+            }
+            // 初始化农户信息（翻译农民数据）
+            function initFarmerInfo() {
+                const farmers = [
+                    {name: {zh: "王林", en: "Wang Lin"}, qualification: {zh: "果农", en: "Fruit Farmer"}, plant: {zh: "苹果", en: "Apple"}, origin: {zh: "中国山东", en: "Shandong, China"}, time: {zh: "需要提前半年预约", en: "Requires booking 6 months in advance"}, phone: "123456788"},
+                    {name: {zh: "张新", en: "Zhang Xin"}, qualification: {zh: "菜农", en: "Vegetable Farmer"}, plant: {zh: "上海青", en: "Shanghai Green"}, origin: {zh: "中国上海", en: "Shanghai, China"}, time: {zh: "需要提前三月预约", en: "Requires booking 3 months in advance"}, phone: "145637895"},
+                    {name: {zh: "赵微染", en: "Zhao Weiran"}, qualification: {zh: "果农", en: "Fruit Farmer"}, plant: {zh: "樱桃", en: "Cherry"}, origin: {zh: "中国山东", en: "Shandong, China"}, time: {zh: "需要提前一年预约", en: "Requires booking 1 year in advance"}, phone: "745896152"},
+                    {name: {zh: "王潇", en: "Wang Xiao"}, qualification: {zh: "菜农", en: "Vegetable Farmer"}, plant: {zh: "蘑菇", en: "Mushroom"}, origin: {zh: "中国云南", en: "Yunnan, China"}, time: {zh: "需要提前三月预约", en: "Requires booking 3 months in advance"}, phone: "148567456"},
+                    {name: {zh: "司马楠", en: "Sima Nan"}, qualification: {zh: "果农", en: "Fruit Farmer"}, plant: {zh: "香蕉", en: "Banana"}, origin: {zh: "中国海南", en: "Hainan, China"}, time: {zh: "需要提前三月预约", en: "Requires booking 3 months in advance"}, phone: "185646589"},
+                    {name: {zh: "傅首息", en: "Fu Shoux"}, qualification: {zh: "菜农", en: "Vegetable Farmer"}, plant: {zh: "山药", en: "Yam"}, origin: {zh: "中国山东", en: "Shandong, China"}, time: {zh: "需要提前一年预约", en: "Requires booking 1 year in advance"}, phone: "175822248"},
+                    {name: {zh: "言露", en: "Yan Lu"}, qualification: {zh: "果农", en: "Fruit Farmer"}, plant: {zh: "火龙果", en: "Dragon Fruit"}, origin: {zh: "中国福建", en: "Fujian, China"}, time: {zh: "需要提前一年预约", en: "Requires booking 1 year in advance"}, phone: "784214568"},
+                    {name: {zh: "王潇", en: "Wang Xiao"}, qualification: {zh: "菜农", en: "Vegetable Farmer"}, plant: {zh: "马铃薯", en: "Potato"}, origin: {zh: "中国四川", en: "Sichuan, China"}, time: {zh: "需要提前一年预约", en: "Requires booking 1 year in advance"}, phone: "783456149"}
+                ];
+                const farmerList = document.getElementById('farmer-list');
+                farmerList.innerHTML = ''; // 清空以重新渲染
+                farmers.forEach(farmer => {
+                    const card = document.createElement('div');
+                    card.className = 'feature-card';
+                    card.setAttribute('tabindex', '0');
+                    card.setAttribute('role', 'button');
+                    card.setAttribute('aria-label', `${farmer.name[currentLang]} 的信息`);
+                    const lang = currentLang;
+                    card.innerHTML = `
+                        <div class="feature-icon" aria-hidden="true">👨‍🌾</div>
+                        <div class="feature-title">${farmer.name[lang]}</div>
+                        <div class="feature-desc">
+                            ${lang === 'zh' ? '资质' : 'Qualification'}: ${farmer.qualification[lang]}<br>
+                            ${lang === 'zh' ? '种植植物' : 'Plant'}: ${farmer.plant[lang]}<br>
+                            ${lang === 'zh' ? '产地' : 'Origin'}: ${farmer.origin[lang]}<br>
+                            ${lang === 'zh' ? '时间' : 'Time'}: ${farmer.time[lang]}<br>
+                            ${lang === 'zh' ? '联系电话' : 'Phone'}: ${farmer.phone}
+                        </div>
+                    `;
+                    card.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            // 可以添加点击逻辑，如果需要
+                        }
+                    });
+                    farmerList.appendChild(card);
+                });
+            }
+            // 初始化需求发布（翻译按钮等）
+            function initDemand() {
+                const publishBtn = document.getElementById('publish-btn');
+                const demandInput = document.getElementById('demand-input');
+                const demandList = document.getElementById('demand-list');
+                let demands = JSON.parse(localStorage.getItem('demands')) || [];
+                function renderDemands() {
+                    demandList.innerHTML = '';
+                    demands.forEach((demand, index) => {
+                        const div = document.createElement('div');
+                        div.textContent = demand;
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = currentLang === 'zh' ? '删除' : 'Delete';
+                        deleteBtn.setAttribute('aria-label', `删除需求 ${index + 1}`);
+                        deleteBtn.onclick = () => {
+                            demands.splice(index, 1);
+                            localStorage.setItem('demands', JSON.stringify(demands));
+                            renderDemands();
+                        };
+                        div.appendChild(deleteBtn);
+                        demandList.appendChild(div);
+                    });
+                }
+                publishBtn.addEventListener('click', () => {
+                    const content = demandInput.value.trim();
+                    if (content) {
+                        demands.push(content);
+                        localStorage.setItem('demands', JSON.stringify(demands));
+                        demandInput.value = '';
+                        renderDemands();
+                    }
+                });
+                renderDemands();
+            }
+            // 初始化物流查询（翻译按钮等）
+            function initLogistics() {
+                const confirmBtns = document.querySelectorAll('#waybill-query-sub .confirm-btn');
+                const waybillInputs = document.querySelectorAll('#waybill-query-sub .waybill-input');
+                const urlOutputs = document.querySelectorAll('#waybill-query-sub .url-output');
+                const historyList = document.getElementById('history-list');
+                let history = JSON.parse(localStorage.getItem('waybillHistory')) || [];
+                confirmBtns.forEach((btn, index) => {
+                    btn.textContent = currentLang === 'zh' ? '确认' : 'Confirm'; // 初始设置
+                    btn.setAttribute('aria-label', currentLang === 'zh' ? '确认运单' : 'Confirm waybill');
+                    btn.addEventListener('click', () => {
+                        const num = waybillInputs[index].value.trim();
+                        if (num) {
+                            const url = `https://m.ickd.cn/result.html#no=${num}&com=auto`;
+                            urlOutputs[index].innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer" aria-label="追踪 ${num}">${url}</a>`;
+                            if (!history.includes(num)) {
+                                history.push(num);
+                                localStorage.setItem('waybillHistory', JSON.stringify(history));
+                                renderHistory();
+                            }
+                        }
+                    });
+                });
+                function renderHistory() {
+                    historyList.innerHTML = '';
+                    if (history.length === 0) {
+                        historyList.innerHTML = `<div data-lang-zh="暂无数据" data-lang-en="No data yet">${currentLang === 'zh' ? '暂无数据' : 'No data yet'}</div>`;
+                    } else {
+                        history.forEach((num, index) => {
+                            const item = document.createElement('div');
+                            item.className = 'history-item';
+                            const input = document.createElement('input');
+                            input.type = 'text';
+                            input.value = num;
+                            input.readOnly = true;
+                            input.setAttribute('aria-label', `历史运单 ${num}`);
+                            item.appendChild(input);
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.textContent = currentLang === 'zh' ? '删除' : 'Delete';
+                            deleteBtn.setAttribute('aria-label', `删除 ${num}`);
+                            deleteBtn.onclick = () => {
+                                history.splice(index, 1);
+                                localStorage.setItem('waybillHistory', JSON.stringify(history));
+                                renderHistory();
+                            };
+                            item.appendChild(deleteBtn);
+                            historyList.appendChild(item);
+                        });
+                    }
+                }
+                renderHistory();
+            }
+            // 初始化用户设置（翻译错误/成功消息等，添加验证）
+            function initUserSettings() {
+                const userData = JSON.parse(localStorage.getItem('userData')) || {};
+                // 设置头像
+                const avatar = document.getElementById('user-avatar');
+                if (userData.avatar) {
+                    avatar.src = userData.avatar;
+                }
+                // 设置昵称
+                if (userData.nickname) {
+                    document.getElementById('nickname').value = userData.nickname;
+                }
+                // 设置邮箱
+                if (userData.email) {
+                    document.getElementById('email').value = userData.email;
+                }
+                // 设置手机号
+                if (userData.phone) {
+                    document.getElementById('phone').value = userData.phone;
+                }
+                // 设置密码（已编码）
+                if (userData.password) {
+                    document.getElementById('password').value = atob(userData.password); // 解码显示
+                }
+                // 头像上传功能
+                const avatarUploadBtn = document.getElementById('avatar-upload-btn');
+                const avatarUpload = document.getElementById('avatar-upload');
+                avatarUploadBtn.addEventListener('click', function() {
+                    avatarUpload.click();
+                });
+                avatarUpload.addEventListener('change', function(e) {
+                    if (e.target.files.length > 0) {
+                        const file = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            avatar.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                // 保存设置
+                const saveBtn = document.getElementById('save-settings');
+                const errorElement = document.getElementById('user-error');
+                const successElement = document.getElementById('user-success');
+                saveBtn.addEventListener('click', function() {
+                    const nickname = document.getElementById('nickname').value.trim();
+                    const email = document.getElementById('email').value.trim();
+                    const phone = document.getElementById('phone').value.trim();
+                    const password = document.getElementById('password').value.trim();
+                    let errorMsg = '';
+                    // 验证至少填一个联系方式
+                    if (!email && !phone) {
+                        errorMsg = currentLang === 'zh' ? '请至少填写邮箱或手机号' : 'Please fill in at least email or phone';
+                    } else {
+                        // 邮箱格式验证
+                        if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+                            errorMsg = currentLang === 'zh' ? '邮箱格式无效' : 'Invalid email format';
+                        }
+                        // 手机号格式验证（中国大陆）
+                        if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+                            errorMsg = currentLang === 'zh' ? '手机号格式无效' : 'Invalid phone format';
+                        }
+                        // 密码验证
+                        if (password && !/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(password)) {
+                            errorMsg = currentLang === 'zh' ? '密码至少8位，必须包含英文字母和数字' : 'Password must be at least 8 characters with letters and numbers';
+                        }
+                    }
+                    if (errorMsg) {
+                        errorElement.textContent = errorMsg;
+                        errorElement.style.display = 'block';
+                        successElement.style.display = 'none';
+                        return;
+                    }
+                    // 保存到localStorage（密码base64编码简单加密）
+                    const userData = {
+                        nickname: nickname,
+                        email: email,
+                        phone: phone,
+                        password: password ? btoa(password) : '', // 编码
+                        avatar: document.getElementById('user-avatar').src
+                    };
+                    localStorage.setItem('userData', JSON.stringify(userData));
+                    // 显示成功消息
+                    successElement.textContent = currentLang === 'zh' ? '设置已成功保存！' : 'Settings saved successfully!';
+                    successElement.style.display = 'block';
+                    errorElement.style.display = 'none';
+                    // 3秒后隐藏成功消息
+                    setTimeout(() => {
+                        successElement.style.display = 'none';
+                    }, 3000);
+                });
+            }
+            // 全局搜索功能（用于顶部搜索框）
+            globalSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    globalSearchBtn.click();
+                }
+            });
+            // 初始化
+            showTabsForPage('home');
+            activateTab('product-ai');
+            initProductSearch();
+            initFarmerInfo();
+            initDemand();
+            initLogistics();
+            initUserSettings();
+            updateLanguage(); // 初始更新语言
+        });
+    </script>
+</body>
+</html>
